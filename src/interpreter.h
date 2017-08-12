@@ -27,8 +27,6 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
-// #include "types.h"
-// #include "string.h"
 #include "maker.h"
 
 #define INT_FLAG_CPP "-cpp"

@@ -56,7 +56,7 @@ void addArrayList(ArrayList *list, void *data) {
 }
 
 void insertArrayList(ArrayList *list, void *data, const u32 index) {
-    if (list != NULL && index < list->len) {
+    if (list != NULL && index <= list->len) {
         
         if (list->len >= list->capacity)
             resizeArrayList(list);

@@ -32,6 +32,7 @@
 
 static b32 isSourceFile(const String *);
 static b32 validateVersion(const IFlags *);
+static b32 containsStringInArrayList(const ArrayList *, const char *);
 
 b32 interpret(const char **args, const u32 argc, IFlags *flags) {
     if (argc > 1 && args != NULL && flags != NULL) {
@@ -39,8 +40,8 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags) {
         flags->args = (char **) args;
         flags->numArgs = argc;
 
-        // ArrayList srcFiles;
-        // initArrayList(&srcFiles, 0x10, sizeof(String));
+        ArrayList srcFiles;
+        initArrayList(&srcFiles, 0x10, sizeof(char *));
         // printf("Size: %u\n", sizeof(String));
 
         String stdStr;
@@ -67,6 +68,7 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags) {
                 strArg.cstr = (char *) args[i];
                 strArg.len = strlen(strArg.cstr);
 
+                // Is -std=c/c++xx
                 if (containsString(&strArg, &stdStr) && strArg.len > 6) {
                     b32 foundStart = False;
                     char *c = NULL;
@@ -93,6 +95,8 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags) {
 
                 // Check if source file for processing:
                 else if (isSourceFile(&strArg)) {
+                    if (!containsStringInArrayList(&srcFiles, strArg.cstr))
+                        addArrayList(&srcFiles, strArg.cstr);
                 }
 
                 // Invalid flag or file return false.
@@ -177,4 +181,21 @@ b32 validateVersion(const IFlags *flags) {
             return False;
         }
     }
+}
+
+b32 containsStringInArrayList(const ArrayList *list, const char *str) {
+    if (list == NULL || str == NULL || !list->len)
+        return False;
+
+    const char **arr = (const char **) list->data;
+
+    for (u32 i = 0; i < list->len; i++) {
+        if (arr[i] == str)
+            return True;
+
+        if (!strcmp(arr[i], str))
+            return True;
+    }
+
+    return False;
 }
