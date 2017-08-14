@@ -31,11 +31,12 @@
 #define VALID_MASK 0x7fffffff
 
 static b32 isSourceFile(const String *);
+static void loadSources(SRC *, ArrayList *);
 static b32 validateVersion(const IFlags *);
 static b32 containsStringInArrayList(const ArrayList *, const char *);
 
-b32 interpret(const char **args, const u32 argc, IFlags *flags) {
-    if (argc > 1 && args != NULL && flags != NULL) {
+b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
+    if (argc > 1 && args != NULL && flags != NULL && sources != NULL) {
         
         flags->args = (char **) args;
         flags->numArgs = argc;
@@ -52,8 +53,21 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags) {
 #if Debug
             printf("[%u]: %s\n", i, args[i]);
 #endif
-            if (args[i][0] != '-')
-                continue;
+            if (args[i][0] != '-') {
+                String strArg;
+                strArg.cstr = (char *) args[i];
+                strArg.len = strlen(strArg.cstr);
+
+                // Check if source file for processing:
+                if (isSourceFile(&strArg)) {
+                    if (!containsStringInArrayList(&srcFiles, strArg.cstr))
+                        addArrayList(&srcFiles, strArg.cstr);
+                }
+
+                else {
+                    continue;
+                }
+            }
 
             else if (!strcmp(args[i], INT_FLAG_CPP)) {
                 if (flags->cmode & VALID_FLAG) {
@@ -93,11 +107,13 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags) {
                     flags->stdver |= VALID_FLAG;
                 }
 
+#if 0
                 // Check if source file for processing:
                 else if (isSourceFile(&strArg)) {
                     if (!containsStringInArrayList(&srcFiles, strArg.cstr))
                         addArrayList(&srcFiles, strArg.cstr);
                 }
+#endif
 
                 // Invalid flag or file return false.
                 else {
@@ -109,7 +125,14 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags) {
 #if 0
         return True;
 #else
-        return validateVersion(flags);
+        // return validateVersion(flags) && srcFiles.len;
+        if (!srcFiles.len || !validateVersion(flags))
+            return False;
+
+        loadSources(sources, &srcFiles);
+        freeArrayList(&srcFiles);
+        
+        return True;
 #endif
     }
 
@@ -143,6 +166,21 @@ b32 isSourceFile(const String *str) {
         return True;
 
     return False;
+}
+
+void loadSources(SRC *sources, ArrayList *list) {
+    if (sources != NULL && list != NULL && list->len) {
+
+        sources->len = list->len;
+        sources->srcFiles = (String *) calloc(sources->len, sizeof(String));
+        char **arr = (char **) list->data;
+
+        for (u32 i = 0; i < list->len; i++) {
+            sources->srcFiles[i].cstr = arr[i];
+            sources->srcFiles[i].len = strlen(arr[i]);
+        }
+
+    }
 }
 
 b32 validateVersion(const IFlags *flags) {

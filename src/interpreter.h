@@ -39,6 +39,6 @@ typedef struct IntFlags {
     u32 stdver;
 } IFlags;
 
-b32 interpret(const char **, const u32, IFlags *);
+b32 interpret(const char **, const u32, IFlags *, SRC *);
 
 #endif // !INTERPRETER_H

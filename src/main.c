@@ -33,6 +33,12 @@
 #include <vld.h>
 #endif
 
+#if Debug & 0
+#define INTERNAL_TEST True
+#else
+#define INTERNAL_TEST False
+#endif
+
 void error(const char *msg) {
     perror("Error interpeting args from command line!\n");
 
@@ -75,10 +81,19 @@ s32 main(s32 argc, char **argv) {
     flags.numArgs = 0;
     flags.cmode = True;
 
-    if (!interpret(argv, (u32) argc, &flags)) {
+    SRC sources;
+
+    if (!interpret(argv, (u32) argc, &flags, &sources)) {
         error("Error interpeting args from command line!\n");
     }
 
+    constructString(&sources.flags, DEFAULT_FLAGS);
+    writeToFile(MAKEFILE_VAR, &sources);
+
+    desrtuctString(&sources.flags);
+    free(sources.srcFiles);
+
+#if INTERNAL_TEST
     SRC src;
     src.len = 2;
     src.srcFiles = (String *) calloc(src.len, sizeof(String));
@@ -92,6 +107,7 @@ s32 main(s32 argc, char **argv) {
     desrtuctString(&src.srcFiles[0]);
     desrtuctString(&src.srcFiles[1]);
     free(src.srcFiles);
+#endif
 
 #ifdef WIN32
     system("PAUSE");
