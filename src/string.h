@@ -43,6 +43,7 @@ s32 strcmp(const char *, const char *);
 // b32 strcpy(const char *, const char *);
 b32 containsString(const String *, const String *);
 b32 parseUInt(const String *, u32 *);
+b32 toString(String *, const s32);
 
 void constructString(String *, const char *);
 void desrtuctString(String *);

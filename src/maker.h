@@ -27,7 +27,6 @@
 #ifndef MAKER_H
 #define MAKER_H
 
-// #include "types.h"
 #include "string.h"
 
 #define CC_VAR "$(CC)"
@@ -37,11 +36,11 @@
 #define DEFAULT_FLAGS "$(CC_VER) -g -Wall"
 
 typedef struct SRC {
-    // char *flags;
     String flags;
-    // char **srcFiles;
     String *srcFiles;
     u32 len;
+    u32 stdver;
+    b32 cmode;
 } SRC;
 
 b32 writeToFile(const char *, const SRC *);

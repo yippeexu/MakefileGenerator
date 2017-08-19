@@ -100,6 +100,50 @@ b32 parseUInt(const String *string, u32 *output) {
     return True;
 }
 
+b32 toString(String *string, const s32 val) {
+    if (string == NULL)
+        return False;
+
+    s32 copy = val;
+    u32 count;
+
+    if (copy < 0) {
+        count = 1;
+        copy = -copy;
+    }
+
+    else {
+        count = 0;
+    }
+
+    for ( ; copy; count++) {
+        copy /= 10;
+    }
+
+    if (!count) {
+        // Throw error?
+        return False;
+    }
+
+    string->len = count + 1;
+    string->cstr = (char *) calloc(string->len, sizeof(char));
+
+    copy = val;
+    count = 0;
+
+    if (copy < 0) {
+        copy = -copy;
+        string->cstr[count++] = '-';
+    }
+
+    for ( ; copy; count++) {
+        string->cstr[count] = copy % 10;
+        copy /= 10;
+    }
+
+    return True;
+}
+
 void constructString(String *string, const char *cstr) {
     if (string != NULL && cstr != NULL) {
         string->len = strlen(cstr);

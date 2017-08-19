@@ -87,7 +87,7 @@ s32 main(s32 argc, char **argv) {
         error("Error interpeting args from command line!\n");
     }
 
-    constructString(&sources.flags, DEFAULT_FLAGS);
+    // constructString(&sources.flags, DEFAULT_FLAGS);
     writeToFile(MAKEFILE_VAR, &sources);
 
     desrtuctString(&sources.flags);

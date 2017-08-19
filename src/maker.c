@@ -41,7 +41,15 @@ b32 writeToFile(const char *file, const SRC *src) {
     writeCString("CC = gcc", outputFile);
     putc('\n', outputFile);
 
-    writeCString("CC_VER = -std=c99", outputFile);
+    // Write "CC_VER = -std=c99":
+    // writeCString("CC_VER = -std=c99", outputFile);
+    writeCString("CC_VER = -std=c", outputFile);
+
+    if (!src->cmode) 
+        writeCString("++", outputFile);
+
+    putc('0' + ((src->stdver / 10) % 10), outputFile);
+    putc('0' + (src->stdver % 10), outputFile);
     putc('\n', outputFile);
 
     writeCString("CC_FLAGS = ", outputFile);

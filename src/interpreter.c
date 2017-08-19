@@ -32,6 +32,8 @@
 
 static b32 isSourceFile(const String *);
 static void loadSources(SRC *, ArrayList *);
+static void loadFlags(SRC *, IFlags *);
+static b32 validateDebugMode(const u32);
 static b32 validateVersion(const IFlags *);
 static b32 containsStringInArrayList(const ArrayList *, const char *);
 
@@ -40,6 +42,9 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
         
         flags->args = (char **) args;
         flags->numArgs = argc;
+        flags->stdver = 0;
+        flags->debugMode = 0;
+        flags->wall = 0;
 
         ArrayList srcFiles;
         initArrayList(&srcFiles, 0x10, sizeof(char *));
@@ -75,6 +80,22 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
                 }
 
                 flags->cmode = VALID_FLAG;
+            }
+
+            else if (!strcmp(args[i], INT_FLAG_DEBUG_MODE)) {
+                if (flags->debugMode & VALID_FLAG) {
+                    return False;
+                }
+
+                flags->debugMode = VALID_FLAG | 1;
+            }
+
+            else if (!strcmp(args[i], INT_FLAG_WALL)) {
+                if (flags->wall & VALID_FLAG) {
+                    return False;
+                }
+
+                flags->wall = VALID_FLAG | 1;
             }
 
             else {
@@ -126,10 +147,12 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
         return True;
 #else
         // return validateVersion(flags) && srcFiles.len;
-        if (!srcFiles.len || !validateVersion(flags))
+        if (!srcFiles.len || !validateDebugMode(flags->debugMode) || 
+            !validateDebugMode(flags->wall) || !validateVersion(flags))
             return False;
 
         loadSources(sources, &srcFiles);
+        loadFlags(sources, flags);
         freeArrayList(&srcFiles);
         
         return True;
@@ -170,7 +193,6 @@ b32 isSourceFile(const String *str) {
 
 void loadSources(SRC *sources, ArrayList *list) {
     if (sources != NULL && list != NULL && list->len) {
-
         sources->len = list->len;
         sources->srcFiles = (String *) calloc(sources->len, sizeof(String));
         char **arr = (char **) list->data;
@@ -181,6 +203,105 @@ void loadSources(SRC *sources, ArrayList *list) {
         }
 
     }
+}
+
+void loadFlags(SRC *sources, IFlags *flags) {
+    if (sources != NULL && flags != NULL) {
+        sources->stdver = flags->stdver & VALID_MASK;
+        sources->cmode = flags->cmode & 1;
+
+        ArrayList list;
+        initArrayList(&list, 0x40, sizeof(char));
+
+        if (flags->debugMode == (VALID_FLAG | 1)) {
+            addArrayList(&list, (void *) '-');
+            addArrayList(&list, (void *) 'g');
+            addArrayList(&list, (void *) ' ');
+        }
+
+        if (flags->wall == (VALID_FLAG | 1)) {
+            addArrayList(&list, (void *) '-');
+            addArrayList(&list, (void *) 'W');
+            addArrayList(&list, (void *) 'a');
+            addArrayList(&list, (void *) 'l');
+            addArrayList(&list, (void *) 'l');
+            addArrayList(&list, (void *) ' ');
+        }
+
+        addArrayList(&list, (void *) '-');
+        addArrayList(&list, (void *) 's');
+        addArrayList(&list, (void *) 't');
+        addArrayList(&list, (void *) 'd');
+        addArrayList(&list, (void *) '=');
+        addArrayList(&list, (void *) 'c');
+
+        if (flags->cmode & 1) {
+            switch (flags->stdver & VALID_MASK) {
+                case 99:
+                    addArrayList(&list, (void *) '9');
+                    addArrayList(&list, (void *) '9');
+                    break;
+                case 11:
+                    addArrayList(&list, (void *) '1');
+                    addArrayList(&list, (void *) '1');
+                    break;
+                case 89:
+                    addArrayList(&list, (void *) '8');
+                    addArrayList(&list, (void *) '9');
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        else {
+            addArrayList(&list, (void *) '+');
+            addArrayList(&list, (void *) '+');
+
+            switch (flags->stdver & VALID_MASK) {
+                case 98:
+                    addArrayList(&list, (void *) '9');
+                    addArrayList(&list, (void *) '8');
+                    break;
+                case 11:
+                    addArrayList(&list, (void *) '1');
+                    addArrayList(&list, (void *) '1');
+                    break;
+                case 14:
+                    addArrayList(&list, (void *) '1');
+                    addArrayList(&list, (void *) '4');
+                    break;
+                case 17:
+                    addArrayList(&list, (void *) '1');
+                    addArrayList(&list, (void *) '7');
+                    break;
+                case 89:
+                    addArrayList(&list, (void *) '8');
+                    addArrayList(&list, (void *) '9');
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        // addArrayList(&list, (void *) ' ');
+        // addArrayList(&list, (void *) '\0');
+
+        // constructString(&sources->flags, *(char **) &list.data);
+
+        sources->flags.len = list.len; // +1;
+        sources->flags.cstr = calloc(sources->flags.len, sizeof(char));
+
+        for (u32 i = 0; i < list.len; i++) {
+            sources->flags.cstr[i] = *(char *) &list.data[i];
+        }
+
+        freeArrayList(&list);
+    }
+}
+
+b32 validateDebugMode(const u32 flag) {
+    return !flag || flag == (VALID_FLAG | 1);
 }
 
 b32 validateVersion(const IFlags *flags) {
