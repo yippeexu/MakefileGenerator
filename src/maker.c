@@ -89,8 +89,24 @@ b32 writeToFile(const char *file, const SRC *src) {
     putc(' ', outputFile);
 
     // -o
-    writeCString("-o ", outputFile);    
-    writeFileName(src->srcFiles[0].cstr, outputFile);
+    writeCString("-o ", outputFile);
+
+    if (src->name.cstr != NULL && src->name.len) {
+        writeString(&src->name, outputFile);
+    }
+    
+    else {
+        writeFileName(src->srcFiles[0].cstr, outputFile);
+    }
+
+#if 0
+        // write name of executable:
+        if (src->name.cstr != NULL && src->name.len) {
+            // "-o"
+            writeCString("-o ", outputFile);
+            writeString(&src->name, outputFile);
+        }
+#endif
 
     putc(' ', outputFile);
 

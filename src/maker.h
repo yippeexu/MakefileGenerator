@@ -39,6 +39,7 @@ typedef struct SRC {
     String flags;
     String *srcFiles;
     u32 len;
+    String name;
     u32 stdver;
     b32 cmode;
 } SRC;

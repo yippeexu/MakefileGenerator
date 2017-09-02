@@ -31,12 +31,14 @@
 
 #define INT_FLAG_CPP "-cpp"
 #define INT_FLAG_STD "-std="
+#define INT_FLAG_NAME "-name="
 #define INT_FLAG_DEBUG_MODE "-g"
 #define INT_FLAG_WALL "-Wall"
 
 typedef struct IntFlags {
     char **args;
     u32 numArgs;
+    String name;
     b32 cmode;
     u32 stdver;
     u32 debugMode;

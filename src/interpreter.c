@@ -30,6 +30,9 @@
 #define VALID_FLAG 0x80000000
 #define VALID_MASK 0x7fffffff
 
+static String stdStr;
+static String nameStr;
+
 static b32 isSourceFile(const String *);
 static void loadSources(SRC *, ArrayList *);
 static void loadFlags(SRC *, IFlags *);
@@ -42,6 +45,8 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
         
         flags->args = (char **) args;
         flags->numArgs = argc;
+        flags->name.cstr = NULL;
+        flags->name.len = 0;
         flags->stdver = 0;
         flags->debugMode = 0;
         flags->wall = 0;
@@ -50,9 +55,15 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
         initArrayList(&srcFiles, 0x10, sizeof(char *));
         // printf("Size: %u\n", sizeof(String));
 
-        String stdStr;
-        stdStr.cstr = INT_FLAG_STD;
-        stdStr.len = strlen(stdStr.cstr);
+        if (!stdStr.len) {
+            stdStr.cstr = INT_FLAG_STD;
+            stdStr.len = strlen(stdStr.cstr);
+        }
+
+        if (!nameStr.len) {
+            nameStr.cstr = INT_FLAG_NAME;
+            nameStr.len = strlen(nameStr.cstr);
+        }
 
         for (u32 i = 1; i < argc; i++) {
 #if Debug
@@ -126,6 +137,11 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
                         return False;
 
                     flags->stdver |= VALID_FLAG;
+                }
+
+                else if (containsString(&strArg, &nameStr) && strArg.len > 7) {
+                    flags->name.cstr = &strArg.cstr[6];
+                    flags->name.len = strArg.len - 6;
                 }
 
 #if 0
@@ -295,6 +311,9 @@ void loadFlags(SRC *sources, IFlags *flags) {
         for (u32 i = 0; i < list.len; i++) {
             sources->flags.cstr[i] = *(char *) &list.data[i];
         }
+
+        sources->name.cstr = flags->name.cstr;
+        sources->name.len = flags->name.len - 1; // TODO: Change this hack?!??!
 
         freeArrayList(&list);
     }
