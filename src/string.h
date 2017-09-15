@@ -29,23 +29,32 @@
 
 #include "types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct String {
     char *cstr;
     u32 len;
     // u32 capacity;
 } String;
 
-b32 isNum(const char);
-u32 charToNum(const char);
+b32 isNum(char);
+u32 charToNum(char);
 
-u32 strlen(const char *);
-s32 strcmp(const char *, const char *);
+u32 stringLength(const char *);
+s32 stringCompare(const char *, const char *);
 // b32 strcpy(const char *, const char *);
 b32 containsString(const String *, const String *);
+
 b32 parseUInt(const String *, u32 *);
-b32 toString(String *, const s32);
+b32 toString(String *, s32);
 
 void constructString(String *, const char *);
 void desrtuctString(String *);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // !STRING_H

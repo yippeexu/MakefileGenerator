@@ -66,6 +66,14 @@ typedef double f64;
 #define True (b32) 1u
 #endif
 
-u32 pow(const u32, const u32);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+u32 my_pow(u32, u32);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

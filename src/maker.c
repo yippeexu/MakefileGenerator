@@ -24,9 +24,16 @@
 
 #include "maker.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static void writeSourceFile(const FILE *, const char *);
+
 static void writeString(const String *, const FILE *);
+
 static void writeCString(const char *, const FILE *);
+
 static void writeFileName(const char *, const FILE *);
 
 b32 writeToFile(const char *file, const SRC *src) {
@@ -45,7 +52,7 @@ b32 writeToFile(const char *file, const SRC *src) {
     // writeCString("CC_VER = -std=c99", outputFile);
     writeCString("CC_VER = -std=c", outputFile);
 
-    if (!src->cmode) 
+    if (!src->cmode)
         writeCString("++", outputFile);
 
     putc('0' + ((src->stdver / 10) % 10), outputFile);
@@ -94,18 +101,18 @@ b32 writeToFile(const char *file, const SRC *src) {
     if (src->name.cstr != NULL && src->name.len) {
         writeString(&src->name, outputFile);
     }
-    
+
     else {
         writeFileName(src->srcFiles[0].cstr, outputFile);
     }
 
 #if 0
-        // write name of executable:
-        if (src->name.cstr != NULL && src->name.len) {
-            // "-o"
-            writeCString("-o ", outputFile);
-            writeString(&src->name, outputFile);
-        }
+    // write name of executable:
+    if (src->name.cstr != NULL && src->name.len) {
+        // "-o"
+        writeCString("-o ", outputFile);
+        writeString(&src->name, outputFile);
+    }
 #endif
 
     putc(' ', outputFile);
@@ -144,7 +151,7 @@ b32 writeToFile(const char *file, const SRC *src) {
 void writeSourceFile(const FILE *file, const char *src) {
     if (file == NULL || src == NULL)
         return;
-    
+
     // example.o: \' \'
     for (u32 i = 0; src[i] != '\0'; i++) {
         if (src[i] == '.')
@@ -197,3 +204,7 @@ void writeFileName(const char *src, const FILE *file) {
         }
     }
 }
+
+#ifdef __cplusplus
+}
+#endif

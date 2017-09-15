@@ -36,7 +36,7 @@
 #if Debug & 0
 #define INTERNAL_TEST True
 #else
-#define INTERNAL_TEST False
+#define INTERNAL_TEST 0
 #endif
 
 void error(const char *msg) {
@@ -83,7 +83,7 @@ s32 main(s32 argc, char **argv) {
 
     SRC sources;
 
-    if (!interpret(argv, (u32) argc, &flags, &sources)) {
+    if (!interpret((const char **) argv, (u32) argc, &flags, &sources)) {
         error("Error interpeting args from command line!\n");
     }
 

@@ -24,7 +24,11 @@
 
 #include "types.h"
 
-u32 pow(const u32 base, const u32 power) {
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+u32 my_pow(const u32 base, const u32 power) {
     if (!power)
         return 1;
     else if (power == 1)
@@ -38,3 +42,7 @@ u32 pow(const u32 base, const u32 power) {
 
     return result;
 }
+
+#ifdef __cplusplus
+}
+#endif

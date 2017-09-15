@@ -22,37 +22,4 @@
 * SOFTWARE.
 */
 
-#pragma once
-
-#ifndef INTERPRETER_H
-#define INTERPRETER_H
-
-#include "maker.h"
-
-#define INT_FLAG_CPP "-cpp"
-#define INT_FLAG_STD "-std="
-#define INT_FLAG_NAME "-name="
-#define INT_FLAG_DEBUG_MODE "-g"
-#define INT_FLAG_WALL "-Wall"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct IntFlags {
-    char **args;
-    u32 numArgs;
-    String name;
-    b32 cmode;
-    u32 stdver;
-    u32 debugMode;
-    u32 wall;
-} IFlags;
-
-b32 interpret(const char **, u32, IFlags *, SRC *);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // !INTERPRETER_H
+#include "carraylist.h"

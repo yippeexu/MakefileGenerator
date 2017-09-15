@@ -35,6 +35,10 @@
 #define MAKEFILE_VAR "makefile"
 #define DEFAULT_FLAGS "$(CC_VER) -g -Wall"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct SRC {
     String flags;
     String *srcFiles;
@@ -45,5 +49,9 @@ typedef struct SRC {
 } SRC;
 
 b32 writeToFile(const char *, const SRC *);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // !MAKER_H

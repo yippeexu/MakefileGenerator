@@ -24,25 +24,32 @@
 
 #include "interpreter.h"
 
-#include "arraylist.h"
+// #include "arraylist.h"
+#include "carraylist.h"
 
 #define MIN_FILE_SIZE 4u // 'a' + '.' + 'c' + '\0' = 4
 #define VALID_FLAG 0x80000000
 #define VALID_MASK 0x7fffffff
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static String stdStr;
 static String nameStr;
 
 static b32 isSourceFile(const String *);
-static void loadSources(SRC *, ArrayList *);
+static void loadSources(SRC *, CArrayList<char *> *);
 static void loadFlags(SRC *, IFlags *);
-static b32 validateDebugMode(const u32);
+static b32 validateDebugMode(u32);
 static b32 validateVersion(const IFlags *);
-static b32 containsStringInArrayList(const ArrayList *, const char *);
+static b32 containsStringInArrayList(CArrayList<char *> *, const char *);
+
+extern u32 stringLength(const char *);
 
 b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
     if (argc > 1 && args != NULL && flags != NULL && sources != NULL) {
-        
+
         flags->args = (char **) args;
         flags->numArgs = argc;
         flags->name.cstr = NULL;
@@ -51,18 +58,17 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
         flags->debugMode = 0;
         flags->wall = 0;
 
-        ArrayList srcFiles;
-        initArrayList(&srcFiles, 0x10, sizeof(char *));
+        CArrayList<char *> srcFiles;
         // printf("Size: %u\n", sizeof(String));
 
         if (!stdStr.len) {
-            stdStr.cstr = INT_FLAG_STD;
-            stdStr.len = strlen(stdStr.cstr);
+            stdStr.cstr = (char *) INT_FLAG_STD;
+            stdStr.len = stringLength(stdStr.cstr);
         }
 
         if (!nameStr.len) {
-            nameStr.cstr = INT_FLAG_NAME;
-            nameStr.len = strlen(nameStr.cstr);
+            nameStr.cstr = (char *) INT_FLAG_NAME;
+            nameStr.len = stringLength(nameStr.cstr);
         }
 
         for (u32 i = 1; i < argc; i++) {
@@ -72,12 +78,13 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
             if (args[i][0] != '-') {
                 String strArg;
                 strArg.cstr = (char *) args[i];
-                strArg.len = strlen(strArg.cstr);
+                strArg.len = stringLength(strArg.cstr);
 
                 // Check if source file for processing:
                 if (isSourceFile(&strArg)) {
                     if (!containsStringInArrayList(&srcFiles, strArg.cstr))
-                        addArrayList(&srcFiles, strArg.cstr);
+                        srcFiles.add(strArg.cstr);
+                    // addArrayList(&srcFiles, strArg.cstr);
                 }
 
                 else {
@@ -85,7 +92,7 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
                 }
             }
 
-            else if (!strcmp(args[i], INT_FLAG_CPP)) {
+            else if (!stringCompare(args[i], INT_FLAG_CPP)) {
                 if (flags->cmode & VALID_FLAG) {
                     return False;
                 }
@@ -93,7 +100,7 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
                 flags->cmode = VALID_FLAG;
             }
 
-            else if (!strcmp(args[i], INT_FLAG_DEBUG_MODE)) {
+            else if (!stringCompare(args[i], INT_FLAG_DEBUG_MODE)) {
                 if (flags->debugMode & VALID_FLAG) {
                     return False;
                 }
@@ -101,7 +108,7 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
                 flags->debugMode = VALID_FLAG | 1;
             }
 
-            else if (!strcmp(args[i], INT_FLAG_WALL)) {
+            else if (!stringCompare(args[i], INT_FLAG_WALL)) {
                 if (flags->wall & VALID_FLAG) {
                     return False;
                 }
@@ -112,7 +119,7 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
             else {
                 String strArg;
                 strArg.cstr = (char *) args[i];
-                strArg.len = strlen(strArg.cstr);
+                strArg.len = stringLength(strArg.cstr);
 
                 // Is -std=c/c++xx
                 if (containsString(&strArg, &stdStr) && strArg.len > 6) {
@@ -131,7 +138,7 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
 
                     String ver;
                     ver.cstr = c;
-                    ver.len = strArg.len - ((u32)(c - strArg.cstr));
+                    ver.len = strArg.len - ((u32) (c - strArg.cstr));
 
                     if (!parseUInt(&ver, &flags->stdver))
                         return False;
@@ -145,14 +152,14 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
                 }
 
 #if 0
-                // Check if source file for processing:
-                else if (isSourceFile(&strArg)) {
-                    if (!containsStringInArrayList(&srcFiles, strArg.cstr))
-                        addArrayList(&srcFiles, strArg.cstr);
-                }
+                    // Check if source file for processing:
+                    else if (isSourceFile(&strArg)) {
+                        if (!containsStringInArrayList(&srcFiles, strArg.cstr))
+                            addArrayList(&srcFiles, strArg.cstr);
+                    }
 #endif
 
-                // Invalid flag or file return false.
+                    // Invalid flag or file return false.
                 else {
                     return False;
                 }
@@ -163,14 +170,14 @@ b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
         return True;
 #else
         // return validateVersion(flags) && srcFiles.len;
-        if (!srcFiles.len || !validateDebugMode(flags->debugMode) || 
+        if (srcFiles.isEmpty() || !validateDebugMode(flags->debugMode) ||
             !validateDebugMode(flags->wall) || !validateVersion(flags))
             return False;
 
         loadSources(sources, &srcFiles);
         loadFlags(sources, flags);
-        freeArrayList(&srcFiles);
-        
+        // freeArrayList(&srcFiles);
+
         return True;
 #endif
     }
@@ -191,31 +198,30 @@ b32 isSourceFile(const String *str) {
 
     if (c == NULL)
         return False;
-    else if (!strcmp(c, ".h"))
+    else if (!stringCompare(c, ".h"))
         return True;
-    else if (!strcmp(c, ".hpp"))
+    else if (!stringCompare(c, ".hpp"))
         return True;
-    else if (!strcmp(c, ".hxx"))
+    else if (!stringCompare(c, ".hxx"))
         return True;
-    else if (!strcmp(c, ".c"))
+    else if (!stringCompare(c, ".c"))
         return True;
-    else if (!strcmp(c, ".cpp"))
+    else if (!stringCompare(c, ".cpp"))
         return True;
-    else if (!strcmp(c, ".cxx"))
+    else if (!stringCompare(c, ".cxx"))
         return True;
 
     return False;
 }
 
-void loadSources(SRC *sources, ArrayList *list) {
-    if (sources != NULL && list != NULL && list->len) {
-        sources->len = list->len;
+void loadSources(SRC *sources, CArrayList<char *> *list) {
+    if (sources != NULL && list != NULL && !list->isEmpty()) {
+        sources->len = list->size();
         sources->srcFiles = (String *) calloc(sources->len, sizeof(String));
-        char **arr = (char **) list->data;
 
-        for (u32 i = 0; i < list->len; i++) {
-            sources->srcFiles[i].cstr = arr[i];
-            sources->srcFiles[i].len = strlen(arr[i]);
+        for (u32 i = 0; i < list->size(); i++) {
+            sources->srcFiles[i].cstr = *list->get(i);
+            sources->srcFiles[i].len = stringLength(*list->get(i));
         }
 
     }
@@ -226,6 +232,7 @@ void loadFlags(SRC *sources, IFlags *flags) {
         sources->stdver = flags->stdver & VALID_MASK;
         sources->cmode = flags->cmode & 1;
 
+#if 0
         ArrayList list;
         initArrayList(&list, 0x40, sizeof(char));
 
@@ -304,76 +311,155 @@ void loadFlags(SRC *sources, IFlags *flags) {
         // addArrayList(&list, (void *) '\0');
 
         // constructString(&sources->flags, *(char **) &list.data);
-
         sources->flags.len = list.len; // +1;
-        sources->flags.cstr = calloc(sources->flags.len, sizeof(char));
+#else
+        CharList list(0x40);
 
-        for (u32 i = 0; i < list.len; i++) {
-            sources->flags.cstr[i] = *(char *) &list.data[i];
+        if (flags->debugMode == (VALID_FLAG | 1)) {
+            list.add('-');
+            list.add('g');
+            list.add(' ');
+        }
+
+        if (flags->wall == (VALID_FLAG | 1)) {
+            list.add('-');
+            list.add('W');
+            list.add('a');
+            list.add('l');
+            list.add('l');
+            list.add(' ');
+        }
+
+        list.add('-');
+        list.add('s');
+        list.add('t');
+        list.add('d');
+        list.add('=');
+        list.add('c');
+
+        if (flags->cmode & 1) {
+            switch (flags->stdver & VALID_MASK) {
+                case 99:
+                    list.add('9');
+                    list.add('9');
+                    break;
+                case 11:
+                    list.add('1');
+                    list.add('1');
+                    break;
+                case 89:
+                    list.add('8');
+                    list.add('9');
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        else {
+            list.add('+');
+            list.add('+');
+
+            switch (flags->stdver & VALID_MASK) {
+                case 98:
+                    list.add('9');
+                    list.add('8');
+                    break;
+                case 11:
+                    list.add('1');
+                    list.add('1');
+                    break;
+                case 14:
+                    list.add('1');
+                    list.add('4');
+                    break;
+                case 17:
+                    list.add('1');
+                    list.add('7');
+                    break;
+                case 89:
+                    list.add('8');
+                    list.add('9');
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        sources->flags.len = list.size();
+#endif
+
+        sources->flags.cstr = (char *) calloc(sources->flags.len, sizeof(char));
+
+        for (u32 i = 0; i < list.size(); i++) {
+            // sources->flags.cstr[i] = *(char *) &list.data[i];
+            sources->flags.cstr[i] = *list.get(i);
         }
 
         sources->name.cstr = flags->name.cstr;
         sources->name.len = flags->name.len - 1; // TODO: Change this hack?!??!
 
-        freeArrayList(&list);
+        // freeArrayList(&list);
     }
 }
 
 b32 validateDebugMode(const u32 flag) {
-    return !flag || flag == (VALID_FLAG | 1);
+    return (b32) (!flag || flag == (VALID_FLAG | 1));
 }
 
 b32 validateVersion(const IFlags *flags) {
     if (flags == NULL)
         return False;
 
-    if (!(flags->cmode & VALID_FLAG))
-        return False;
+    // if (!(flags->cmode & VALID_FLAG))
+    // return False;
 
     if (flags->cmode & 1) {
         switch (flags->stdver & VALID_MASK) {
-        case 99:
-            return True;
-        case 11:
-            return True;
-        case 89:
-            return True;
-        default:
-            return False;
+            case 99:
+                return True;
+            case 11:
+                return True;
+            case 89:
+                return True;
+            default:
+                return False;
         }
     }
 
     else {
         switch (flags->stdver & VALID_MASK) {
-        case 98:
-            return True;
-        case 11:
-            return True;
-        case 14:
-            return True;
-        case 17:
-            return True;
-        case 89:
-            return True;
-        default:
-            return False;
+            case 98:
+                return True;
+            case 11:
+                return True;
+            case 14:
+                return True;
+            case 17:
+                return True;
+            case 89:
+                return True;
+            default:
+                return False;
         }
     }
 }
 
-b32 containsStringInArrayList(const ArrayList *list, const char *str) {
-    if (list == NULL || str == NULL || !list->len)
+b32 containsStringInArrayList(CArrayList<char *> *list, const char *str) {
+    if (list == NULL || str == NULL || list->isEmpty())
         return False;
 
-    const char **arr = (const char **) list->data;
-
-    for (u32 i = 0; i < list->len; i++) {
-        if (arr[i] == str)
+    for (u32 i = 0; i < list->size(); i++) {
+        if (*list->get(i) == str)
             return True;
 
-        if (!strcmp(arr[i], str))
+        if (!stringCompare(*list->get(i), str))
             return True;
     }
 
     return False;
 }
+
+#ifdef __cplusplus
+}
+#endif

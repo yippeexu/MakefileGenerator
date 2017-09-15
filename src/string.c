@@ -24,15 +24,19 @@
 
 #include "string.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 b32 isNum(const char c) {
-    return c >= '0' && c <= '9';
+    return (b32) (c >= '0' && c <= '9');
 }
 
 u32 charToNum(const char c) {
-    return c - '0';
+    return (b32) (c - '0');
 }
 
-u32 strlen(const char *cstr) {
+u32 stringLength(const char *cstr) {
     if (cstr == NULL)
         return 0;
 
@@ -43,7 +47,7 @@ u32 strlen(const char *cstr) {
     return count;
 }
 
-s32 strcmp(const char *left, const char *right) {
+s32 stringCompare(const char *left, const char *right) {
     if (left == NULL && right == NULL)
         return 0;
     else if (left != NULL && right == NULL)
@@ -116,7 +120,7 @@ b32 toString(String *string, const s32 val) {
         count = 0;
     }
 
-    for ( ; copy; count++) {
+    for (; copy; count++) {
         copy /= 10;
     }
 
@@ -136,7 +140,7 @@ b32 toString(String *string, const s32 val) {
         string->cstr[count++] = '-';
     }
 
-    for ( ; copy; count++) {
+    for (; copy; count++) {
         string->cstr[count] = copy % 10;
         copy /= 10;
     }
@@ -146,7 +150,7 @@ b32 toString(String *string, const s32 val) {
 
 void constructString(String *string, const char *cstr) {
     if (string != NULL && cstr != NULL) {
-        string->len = strlen(cstr);
+        string->len = stringLength(cstr);
         string->cstr = (char *) calloc(string->len, sizeof(char));
 
         for (u32 i = 0; i < string->len; i++) {
@@ -162,3 +166,7 @@ void desrtuctString(String *string) {
         string->len = 0;
     }
 }
+
+#ifdef __cplusplus
+}
+#endif
