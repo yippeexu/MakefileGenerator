@@ -44,6 +44,26 @@ public:
 
     }
 
+    explicit CArrayList(const CArrayList<T> &other) : arr(new T[other.capacity]), capacity(other.capacity), len(other.len) {
+        for (u32 i = 0; i < len; i++) {
+            arr[i] = other.arr[i];
+        }
+    }
+
+    CArrayList &operator= (const CArrayList<T> &other) {
+        arr = new T[other.capacity];
+        capacity = other.capacity;
+        len = other.len;
+
+        for (u32 i = 0; i < len; i++) {
+            arr[i] = other.arr[i];
+        }
+    }
+
+    T *operator[] (const u32 index) {
+        return get(index);
+    }
+
     inline u32 size() const {
          return len;
     }
