@@ -50,6 +50,11 @@ public:
         }
     }
 
+    ~CArrayList() {
+        if (arr != NULL)
+            delete[] arr;
+    }
+
     CArrayList &operator= (const CArrayList<T> &other) {
         arr = new T[other.capacity];
         capacity = other.capacity;
