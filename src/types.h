@@ -31,6 +31,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef __APPLE__
+#define OS_APPLE 1
+#define OS_WIN 0
+#define OS_UNIX 1
+#elif WIN32 || _WIN64
+#define OS_APPLE 0
+#define OS_WIN 1
+#define OS_UNIX 0
+#elif __unix__
+#define OS_APPLE 0
+#define OS_WIN 0
+#define OS_UNIX 1
+#endif
+
 #ifdef _DEBUG
 #define Debug 1
 #else 
@@ -66,6 +80,14 @@ typedef double f64;
 #define True (b32) 1u
 #endif
 
-u32 pow(const u32, const u32);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+u32 my_pow(const u32, const u32);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

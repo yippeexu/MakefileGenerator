@@ -24,356 +24,154 @@
 
 #include "interpreter.h"
 
-#include "arraylist.h"
+extern void myFree(void *, const char *);
 
-#define MIN_FILE_SIZE 4u // 'a' + '.' + 'c' + '\0' = 4
-#define VALID_FLAG 0x80000000
-#define VALID_MASK 0x7fffffff
+static const char *flagVerCheck = "-std=c";
+static const char *flagNameCheck = "-name=";
+static const u32 flagNameCheckLen = 6;
+static const u32 flagVerCheckLen = 6;
+static SourceFile fileBuf[0x100];
+static u32 bufIndex = 0;
 
-static String stdStr;
-static String nameStr;
+static void cleanupAllocs(ArrayList *);
+static b32 decodeIFlag(const String *, IFlags *);
 
-static b32 isSourceFile(const String *);
-static void loadSources(SRC *, ArrayList *);
-static void loadFlags(SRC *, IFlags *);
-static b32 validateDebugMode(const u32);
-static b32 validateVersion(const IFlags *);
-static b32 containsStringInArrayList(const ArrayList *, const char *);
-
-b32 interpret(const char **args, const u32 argc, IFlags *flags, SRC *sources) {
-    if (argc > 1 && args != NULL && flags != NULL && sources != NULL) {
-        
-        flags->args = (char **) args;
-        flags->numArgs = argc;
-        flags->name.cstr = NULL;
-        flags->name.len = 0;
-        flags->stdver = 0;
-        flags->debugMode = 0;
-        flags->wall = 0;
-
-        ArrayList srcFiles;
-        initArrayList(&srcFiles, 0x10, sizeof(char *));
-        // printf("Size: %u\n", sizeof(String));
-
-        if (!stdStr.len) {
-            stdStr.cstr = INT_FLAG_STD;
-            stdStr.len = strlen(stdStr.cstr);
-        }
-
-        if (!nameStr.len) {
-            nameStr.cstr = INT_FLAG_NAME;
-            nameStr.len = strlen(nameStr.cstr);
-        }
-
-        for (u32 i = 1; i < argc; i++) {
-#if Debug
-            printf("[%u]: %s\n", i, args[i]);
-#endif
-            if (args[i][0] != '-') {
-                String strArg;
-                strArg.cstr = (char *) args[i];
-                strArg.len = strlen(strArg.cstr);
-
-                // Check if source file for processing:
-                if (isSourceFile(&strArg)) {
-                    if (!containsStringInArrayList(&srcFiles, strArg.cstr))
-                        addArrayList(&srcFiles, strArg.cstr);
-                }
-
-                else {
-                    continue;
-                }
-            }
-
-            else if (!strcmp(args[i], INT_FLAG_CPP)) {
-                if (flags->cmode & VALID_FLAG) {
-                    return False;
-                }
-
-                flags->cmode = VALID_FLAG;
-            }
-
-            else if (!strcmp(args[i], INT_FLAG_DEBUG_MODE)) {
-                if (flags->debugMode & VALID_FLAG) {
-                    return False;
-                }
-
-                flags->debugMode = VALID_FLAG | 1;
-            }
-
-            else if (!strcmp(args[i], INT_FLAG_WALL)) {
-                if (flags->wall & VALID_FLAG) {
-                    return False;
-                }
-
-                flags->wall = VALID_FLAG | 1;
-            }
-
-            else {
-                String strArg;
-                strArg.cstr = (char *) args[i];
-                strArg.len = strlen(strArg.cstr);
-
-                // Is -std=c/c++xx
-                if (containsString(&strArg, &stdStr) && strArg.len > 6) {
-                    b32 foundStart = False;
-                    char *c = NULL;
-
-                    for (c = strArg.cstr; c != '\0'; c++) {
-                        if (*c >= '0' && *c <= '9') {
-                            foundStart = True;
-                            break;
-                        }
-                    }
-
-                    if (!foundStart)
-                        return False;
-
-                    String ver;
-                    ver.cstr = c;
-                    ver.len = strArg.len - ((u32)(c - strArg.cstr));
-
-                    if (!parseUInt(&ver, &flags->stdver))
-                        return False;
-
-                    flags->stdver |= VALID_FLAG;
-                }
-
-                else if (containsString(&strArg, &nameStr) && strArg.len > 7) {
-                    flags->name.cstr = &strArg.cstr[6];
-                    flags->name.len = strArg.len - 6;
-                }
-
-#if 0
-                // Check if source file for processing:
-                else if (isSourceFile(&strArg)) {
-                    if (!containsStringInArrayList(&srcFiles, strArg.cstr))
-                        addArrayList(&srcFiles, strArg.cstr);
-                }
-#endif
-
-                // Invalid flag or file return false.
-                else {
-                    return False;
-                }
-            }
-        }
-
-#if 0
-        return True;
-#else
-        // return validateVersion(flags) && srcFiles.len;
-        if (!srcFiles.len || !validateDebugMode(flags->debugMode) || 
-            !validateDebugMode(flags->wall) || !validateVersion(flags))
-            return False;
-
-        loadSources(sources, &srcFiles);
-        loadFlags(sources, flags);
-        freeArrayList(&srcFiles);
-        
-        return True;
-#endif
-    }
-
-    return False;
+void cleanupAllocs(ArrayList *list) {
+    destructArrayList(list);
+    // free(*list);
+    myFree(list, "Allocs");
+    // *list = NULL;
 }
 
-b32 isSourceFile(const String *str) {
-    if (str == NULL || str->len < MIN_FILE_SIZE)
+b32 decodeIFlag(const String *arg, IFlags *flags) {
+    if (!stringCompare(arg->cstr, "-Wall"))
+        flags->wall = 1;
+    else if (!stringCompare(arg->cstr, "-g"))
+        flags->optLevel = OPT_DEBUG;
+    else if (!stringCompare(arg->cstr, "-O0"))
+        flags->optLevel = OPT_OFF;
+    else if (!stringCompare(arg->cstr, "-O1"))
+        flags->optLevel = OPT_LOW;
+    else if (!stringCompare(arg->cstr, "-O2"))
+        flags->optLevel = OPT_MED;
+    else if (!stringCompare(arg->cstr, "-O3"))
+        flags->optLevel = OPT_HIGH;
+    // Could be "-name=<insert name here>"
+    else if (arg->len >= flagNameCheckLen) {
+        for (u32 i = 0; i < flagNameCheckLen; i++) {
+            if (arg->cstr[i] != flagNameCheck[i]) {
+                goto CHECK;
+                return False;
+            }
+        }
+
+        // Valid name, set appropriate flags.
+        constructString(&flags->outputName, arg->cstr + 6);
+    }
+
+    // -std=c11, -std=c++11
+    // Check for stdver:
+    else if (arg->len == 9 || arg->len == 11) {
+    CHECK:;
+        u32 i;
+        for (i = 0; i < flagVerCheckLen; i++) {
+            if (arg->cstr[i] != flagVerCheck[i])
+                return False;
+        }
+
+        if (arg->len == 11) {
+            if (arg->cstr[i++] != '+' || arg->cstr[i++] != '+')
+                return False;
+        }
+
+        // flags->stdver
+        String temp;
+        temp.cstr = (char *) &arg->cstr[i];
+        temp.len = stringLength(temp.cstr);
+
+        u32 output = 0;
+
+        parseUInt(&temp, &output);
+        flags->stdver = (flag_t) (output & 0xff);
+    }
+
+    else
         return False;
 
-    char *c = NULL;
-
-    for (c = &str->cstr[str->len - 2]; c != str->cstr; c--) {
-        if (*c == '.')
-            break;
-    }
-
-    if (c == NULL)
-        return False;
-    else if (!strcmp(c, ".h"))
-        return True;
-    else if (!strcmp(c, ".hpp"))
-        return True;
-    else if (!strcmp(c, ".hxx"))
-        return True;
-    else if (!strcmp(c, ".c"))
-        return True;
-    else if (!strcmp(c, ".cpp"))
-        return True;
-    else if (!strcmp(c, ".cxx"))
-        return True;
-
-    return False;
+    return True;
 }
 
-void loadSources(SRC *sources, ArrayList *list) {
-    if (sources != NULL && list != NULL && list->len) {
-        sources->len = list->len;
-        sources->srcFiles = (String *) calloc(sources->len, sizeof(String));
-        char **arr = (char **) list->data;
-
-        for (u32 i = 0; i < list->len; i++) {
-            sources->srcFiles[i].cstr = arr[i];
-            sources->srcFiles[i].len = strlen(arr[i]);
-        }
-
-    }
+void initIFlags(IFlags *flags) {
+    flags->optLevel = OPT_INVALID;
+    flags->wall = INTERPRETER_INVALID_FLAG;
+    flags->stdver = INTERPRETER_INVALID_FLAG;
+    flags->cmode = INTERPRETER_INVALID_FLAG;
+    flags->outputName.cstr = NULL;
+    flags->outputName.len = 0;
 }
 
-void loadFlags(SRC *sources, IFlags *flags) {
-    if (sources != NULL && flags != NULL) {
-        sources->stdver = flags->stdver & VALID_MASK;
-        sources->cmode = flags->cmode & 1;
+void freeIFlags(IFlags *flags) {
+    flags->optLevel = OPT_INVALID;
+    flags->wall = INTERPRETER_INVALID_FLAG;
+    flags->stdver = INTERPRETER_INVALID_FLAG;
+    flags->cmode = INTERPRETER_INVALID_FLAG;
 
-        ArrayList list;
-        initArrayList(&list, 0x40, sizeof(char));
+    if (flags->outputName.cstr != NULL && flags->outputName.len)
+        desrtuctString(&flags->outputName);
+}
 
-        if (flags->debugMode == (VALID_FLAG | 1)) {
-            addArrayList(&list, (void *) '-');
-            addArrayList(&list, (void *) 'g');
-            addArrayList(&list, (void *) ' ');
-        }
+u32 interpretArgs(const u32 argc, char **argv, ArrayList *sourceFiles, IFlags *flags) {
+    if (argc <= 1 || argv == NULL)
+        return 0;
 
-        if (flags->wall == (VALID_FLAG | 1)) {
-            addArrayList(&list, (void *) '-');
-            addArrayList(&list, (void *) 'W');
-            addArrayList(&list, (void *) 'a');
-            addArrayList(&list, (void *) 'l');
-            addArrayList(&list, (void *) 'l');
-            addArrayList(&list, (void *) ' ');
-        }
+    /*ArrayList *sourceFiles = (ArrayList *) malloc(sizeof(ArrayList));
 
-        addArrayList(&list, (void *) '-');
-        addArrayList(&list, (void *) 's');
-        addArrayList(&list, (void *) 't');
-        addArrayList(&list, (void *) 'd');
-        addArrayList(&list, (void *) '=');
-        addArrayList(&list, (void *) 'c');
+    if (sourceFiles == NULL) {
+        free(sourceFiles);
+        perror("Error allocating space for an ArrayList!\n");
+        exit(-1);
+        return NULL;
+    }*/
 
-        if (flags->cmode & 1) {
-            switch (flags->stdver & VALID_MASK) {
-                case 99:
-                    addArrayList(&list, (void *) '9');
-                    addArrayList(&list, (void *) '9');
-                    break;
-                case 11:
-                    addArrayList(&list, (void *) '1');
-                    addArrayList(&list, (void *) '1');
-                    break;
-                case 89:
-                    addArrayList(&list, (void *) '8');
-                    addArrayList(&list, (void *) '9');
-                    break;
-                default:
-                    break;
+    constructArrayList(sourceFiles, 0x10, sizeof(SourceFile));
+
+    for (u32 i = 1; i < argc; i++) {
+        String arg;
+        arg.cstr = argv[i];
+        arg.len = stringLength(arg.cstr);
+
+        // Is argument.
+        if (arg.cstr[0] == '-') {
+            if (!decodeIFlag(&arg, flags)) {
+                perror("Error parsing flag: ");
+                perror(arg.cstr);
+                perror("\n");
+                cleanupAllocs(sourceFiles);
+                exit(-1);
             }
         }
 
+        // Else check if a valid source file.
         else {
-            addArrayList(&list, (void *) '+');
-            addArrayList(&list, (void *) '+');
+            SourceFile *file = &fileBuf[bufIndex++];
+            file->fileName = arg;
+            b32 cmode = True;
 
-            switch (flags->stdver & VALID_MASK) {
-                case 98:
-                    addArrayList(&list, (void *) '9');
-                    addArrayList(&list, (void *) '8');
-                    break;
-                case 11:
-                    addArrayList(&list, (void *) '1');
-                    addArrayList(&list, (void *) '1');
-                    break;
-                case 14:
-                    addArrayList(&list, (void *) '1');
-                    addArrayList(&list, (void *) '4');
-                    break;
-                case 17:
-                    addArrayList(&list, (void *) '1');
-                    addArrayList(&list, (void *) '7');
-                    break;
-                case 89:
-                    addArrayList(&list, (void *) '8');
-                    addArrayList(&list, (void *) '9');
-                    break;
-                default:
-                    break;
+            if (isValidSourceFile(file, &cmode)) {
+                // If valid we need to deep copy file name.
+                // copyString(&file->fileName, &arg);
+                constructString(&file->fileName, arg.cstr);
+
+                // Add to source file list.
+                addArrayList(sourceFiles, file);
+
+                if (!cmode)
+                    flags->cmode = 0;
+                else if (flags->cmode == INTERPRETER_INVALID_FLAG)
+                    flags->cmode = cmode;
             }
         }
-
-        // addArrayList(&list, (void *) ' ');
-        // addArrayList(&list, (void *) '\0');
-
-        // constructString(&sources->flags, *(char **) &list.data);
-
-        sources->flags.len = list.len; // +1;
-        sources->flags.cstr = calloc(sources->flags.len, sizeof(char));
-
-        for (u32 i = 0; i < list.len; i++) {
-            sources->flags.cstr[i] = *(char *) &list.data[i];
-        }
-
-        sources->name.cstr = flags->name.cstr;
-        sources->name.len = flags->name.len - 1; // TODO: Change this hack?!??!
-
-        freeArrayList(&list);
-    }
-}
-
-b32 validateDebugMode(const u32 flag) {
-    return !flag || flag == (VALID_FLAG | 1);
-}
-
-b32 validateVersion(const IFlags *flags) {
-    if (flags == NULL)
-        return False;
-
-    if (!(flags->cmode & VALID_FLAG))
-        return False;
-
-    if (flags->cmode & 1) {
-        switch (flags->stdver & VALID_MASK) {
-        case 99:
-            return True;
-        case 11:
-            return True;
-        case 89:
-            return True;
-        default:
-            return False;
-        }
     }
 
-    else {
-        switch (flags->stdver & VALID_MASK) {
-        case 98:
-            return True;
-        case 11:
-            return True;
-        case 14:
-            return True;
-        case 17:
-            return True;
-        case 89:
-            return True;
-        default:
-            return False;
-        }
-    }
-}
-
-b32 containsStringInArrayList(const ArrayList *list, const char *str) {
-    if (list == NULL || str == NULL || !list->len)
-        return False;
-
-    const char **arr = (const char **) list->data;
-
-    for (u32 i = 0; i < list->len; i++) {
-        if (arr[i] == str)
-            return True;
-
-        if (!strcmp(arr[i], str))
-            return True;
-    }
-
-    return False;
+    return sourceFiles->len;
 }

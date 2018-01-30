@@ -24,26 +24,32 @@
 
 #pragma once
 
-#ifndef MAKER_H
-#define MAKER_H
+#ifndef MAKEGEN_MAKER_H
+#define MAKEGEN_MAKER_H
 
-#include "string.h"
+#include "source.h"
+#include "interpreter.h"
 
 #define CC_VAR "$(CC)"
 #define CC_FLAGS_VAR "$(CC_FLAGS)"
 #define CPP_VAR "$(CPP)"
 #define MAKEFILE_VAR "makefile"
 #define DEFAULT_FLAGS "$(CC_VER) -g -Wall"
+#define DEFAULT_C_STD 99u
+#define DEFAULT_CPP_STD 98u
 
 typedef struct SRC {
+    String fileName;
     String flags;
-    String *srcFiles;
-    u32 len;
-    String name;
-    u32 stdver;
-    b32 cmode;
+    // u32 stdver;
+    // b32 cmode;
+    ArrayList *sourceFiles;
 } SRC;
 
-b32 writeToFile(const char *, const SRC *);
+void constructSources(SRC *, const char *, const ArrayList *);
+void destructSources(SRC *);
+void addSourceFile(const SRC *, const SourceFile *);
 
-#endif // !MAKER_H
+b32 writeToFile(const SRC *, const IFlags *);
+
+#endif //MAKEGEN_MAKER_H

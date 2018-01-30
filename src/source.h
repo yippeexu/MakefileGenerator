@@ -24,35 +24,20 @@
 
 #pragma once
 
-#ifndef MAKEGEN_ARRAYLIST_H
-#define MAKEGEN_ARRAYLIST_H
+#ifndef MAKEGEN_SOURCE_H
+#define MAKEGEN_SOURCE_H
 
-#include "types.h"
+#include "string.h"
 
-typedef struct ArrayList {
-    void **arr;
-    u32 capacity;
-    u32 sizeOf;
-    u32 len;
-} ArrayList;
+typedef enum FileType {
+    INVALID = 0, HEADER = 1, SOURCE = 2, LEN = 3
+} FileType;
 
-typedef struct ArrayListIterator {
-    ArrayList *list;
-    u32 index;
-} ArrayListIterator;
+typedef struct SourceFile {
+    String fileName;
+    FileType fileType;
+} SourceFile;
 
-void constructArrayList(ArrayList *, const u32, const u32);
-void destructArrayList(ArrayList *);
+b32 isValidSourceFile(SourceFile *, b32 *);
 
-void *getArrayList(const ArrayList *, const u32);
-void setArrayList(ArrayList *, const u32, void *);
-
-void addArrayList(ArrayList *, const void *);
-void removeArrayList(ArrayList *, const u32);
-
-void constructArrayListIterator(ArrayListIterator *, const ArrayList *);
-void desetructArrayListIterator(ArrayListIterator *);
-b32 hasNextArrayListIterator(const ArrayListIterator *);
-void *nextArrayListIterator(ArrayListIterator *);
-
-#endif //MAKEGEN_ARRAYLIST_H
+#endif //MAKEGEN_SOURCE_H

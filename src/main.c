@@ -1,116 +1,117 @@
-/* MIT License
- *
- * Copyright (c) 2017 hockeyhurd
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+/*
+* MIT License
+*
+* Copyright (c) 2017 hockeyhurd
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
 */
 
-// #include "types.h"
-
-#include "maker.h"
 #include "interpreter.h"
-#include "arraylist.h"
-#include "stack.h"
-#include "string.h"
+#include "maker.h"
 
-#if Debug
+#ifdef WIN32
 #include <vld.h>
 #endif
 
-#if Debug & 0
-#define INTERNAL_TEST True
+#if OS_WIN
+static void pause(void) {
+    system("PAUSE");
+}
 #else
-#define INTERNAL_TEST False
+static void pause(void) {}
 #endif
 
-void error(const char *msg) {
-    perror("Error interpeting args from command line!\n");
+#define TEST 0
 
-#ifdef WIN32
-        system("PAUSE");
-#endif
+typedef ArrayListIterator Iter;
 
-    exit(-1);
+static void printString(const String *);
+void myFree(void *, const char *);
+
+void printString(const String *string) {
+    printf("[%u]: %s\n", string->len, string->cstr);
 }
 
-b32 isSourceFile(const String *);
+void myFree(void *ptr, const char *tag) {
+#if Debug
+    printf("Freeing ptr: %p with tag: %s\n", ptr, tag);
+#endif
+    free(ptr);
+}
 
 s32 main(s32 argc, char **argv) {
+#if TEST
+    String test;
+    constructString(&test, "Hello");
+    printString(&test);
 
-#if 0
-    String strInt;
-    strInt.cstr = "945";
-    strInt.len = strlen(strInt.cstr);
+    appendCString(&test, " World!");
+    printString(&test);
 
-    u32 output;
-    const b32 result = parseUInt(&strInt, &output);
+    desrtuctString(&test);
 
-    printf("Result: %u, value: %u\n", result, output);
-#endif
-
-#if 0
-    String testStr;
-    testStr.cstr = "a.c";
-    testStr.len = 4;
-    
-    printf("Is source file %u\n", isSourceFile(&testStr));
-#ifdef WIN32
-    system("PAUSE");
-#endif
-    return 0;
-#endif
-
+#else
     IFlags flags;
-    flags.args = NULL;
-    flags.numArgs = 0;
-    flags.cmode = True;
+    initIFlags(&flags);
 
-    SRC sources;
+    // ArrayList *sourceFiles = interpretArgs(argc, argv, &flags);
+    ArrayList sourceFiles;
 
-    if (!interpret(argv, (u32) argc, &flags, &sources)) {
-        error("Error interpeting args from command line!\n");
+    if (!interpretArgs(argc, argv, &sourceFiles, &flags)) {
+        printf("Error collecting source flags...\n");
     }
 
-    // constructString(&sources.flags, DEFAULT_FLAGS);
-    writeToFile(MAKEFILE_VAR, &sources);
+    else {
+        printf("Collecting source files success!!\n");
 
-    desrtuctString(&sources.flags);
-    free(sources.srcFiles);
+        u32 fileNum = 0;
+        Iter iter;
 
-#if INTERNAL_TEST
-    SRC src;
-    src.len = 2;
-    src.srcFiles = (String *) calloc(src.len, sizeof(String));
-    constructString(&src.flags, DEFAULT_FLAGS);
-    constructString(&src.srcFiles[0], "main.c");
-    constructString(&src.srcFiles[1], "example.c");
-
-    writeToFile(MAKEFILE_VAR, &src);
-
-    desrtuctString(&src.flags);
-    desrtuctString(&src.srcFiles[0]);
-    desrtuctString(&src.srcFiles[1]);
-    free(src.srcFiles);
+#if 1
+        constructArrayListIterator(&iter, &sourceFiles);
+        printf("Files:\n");
+        while (hasNextArrayListIterator(&iter)) {
+            SourceFile *sourceFile = (SourceFile *) nextArrayListIterator(&iter);
+            printf("\t[%u]: %s\n", ++fileNum, sourceFile->fileName.cstr);
+            // free(sourceFile->fileName.cstr);
+        }
 #endif
 
-#ifdef WIN32
-    system("PAUSE");
+        SRC source;
+        constructSources(&source, "makefile", &sourceFiles);
+
+        writeToFile(&source, &flags);
+
+        constructArrayListIterator(&iter, &sourceFiles);
+        while (hasNextArrayListIterator(&iter)) {
+            SourceFile *sourceFile = (SourceFile *) nextArrayListIterator(&iter);
+            // printf("\t[%u]: %s\n", ++fileNum, sourceFile->fileName.cstr);
+            // free(sourceFile->fileName.cstr);
+            myFree(sourceFile->fileName.cstr, "SourceFile's String");
+        }
+
+        destructArrayList(&sourceFiles);
+        destructSources(&source);
+    }
+
+    freeIFlags(&flags);
 #endif
+    pause();
     return 0;
 }

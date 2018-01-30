@@ -24,89 +24,99 @@
 
 #include "arraylist.h"
 
-static void resizeArrayList(ArrayList *);
+static void resizeArray(ArrayList *);
+extern void myFree(void *, const char *);
 
-void initArrayList(ArrayList *list, const u32 capacity, const u32 sizeInBytes) {
-    if (list != NULL) {
-        list->data = (void **) calloc(capacity, sizeInBytes);
-        list->len = 0;
-        list->capacity = capacity;
-        list->sizeInBytes = sizeInBytes;
+void resizeArray(ArrayList *list) {
+    const u32 newCapacity = list->capacity << 1;
+    void **newArr = calloc(list->capacity, list->sizeOf);
+
+    for (u32 i = 0; i < list->capacity; i++) {
+        newArr[i] = list->arr[i];
     }
+
+    // free(list->arr);
+    myFree(list->arr, "Re-sizing ArrayList");
+
+    list->arr = newArr;
+    list->capacity = newCapacity;
 }
 
-void freeArrayList(ArrayList *list) {
-    if (list != NULL) {
-        free(list->data);
-        list->data = NULL;
-        list->capacity = 0;
-        list->len = 0;
-        list->sizeInBytes = 0;
+void constructArrayList(ArrayList *list, const u32 capacity, const u32 sizeOf) {
+    list->arr = calloc(capacity, sizeOf);
+
+    if (list->arr == NULL) {
+        perror("Error Calloc'ing!\n");
+        exit(-1);
     }
+
+    list->capacity = capacity;
+    list->sizeOf = sizeOf;
+    list->len = 0;
 }
 
-void addArrayList(ArrayList *list, void *data) {
-    if (list != NULL) {
+void destructArrayList(ArrayList *list) {
+    // free(list->arr);
+    myFree(list->arr, "ArrayList");
 
-        if (list->len >= list->capacity)
-            resizeArrayList(list);
-
-        list->data[list->len++] = data;
-    }
-}
-
-void insertArrayList(ArrayList *list, void *data, const u32 index) {
-    if (list != NULL && index <= list->len) {
-        
-        if (list->len >= list->capacity)
-            resizeArrayList(list);
-
-        list->len++;
-
-        for (u32 i = list->len; i > index; i--) {
-            list->data[i] = list->data[i - 1];
-        }
-
-        list->data[index] = data;
-    }
-}
-
-void removeArrayList(ArrayList *list, const u32 index) {
-    if (list != NULL && index < list->len) {
-
-        for (u32 i = index; i < list->len - 1; i++) {
-            list->data[i] = list->data[i + 1];
-        }
-
-        list->len--;
-    }
+#if Debug
+    list->arr = NULL;
+    list->capacity = 0;
+    list->sizeOf = 0;
+    list->len = 0;
+#endif
 }
 
 void *getArrayList(const ArrayList *list, const u32 index) {
-    return list != NULL && index < list->len ? list->data[index] : NULL;
+    // return index < list->len ? *(list->arr + (index * list->sizeOf)) : NULL;
+    return index < list->len ? list->arr[index] : NULL;
 }
 
-b32 findArrayList(const ArrayList *list, const void *data) {
-    if (list == NULL)
-        return False;
-
-    for (u32 i = 0; i < list->len; i++) {
-        if (list->data[i] == data)
-            return True;
+void setArrayList(ArrayList *list, const u32 index, void *data) {
+    if (index < list->len) {
+        list->arr[index] = data;
     }
-
-    return False;
 }
 
-void resizeArrayList(ArrayList *list) {
-    list->capacity <<= 1;
-    void **newArr = (void **) calloc(list->capacity, list->sizeInBytes);
+void addArrayList(ArrayList *list, const void *data) {
+    if (list->len + 1 >= list->capacity)
+        resizeArray(list);
 
-    for (u32 i = 0; i < list->len; i++) {
-        newArr[i] = list->data[i];
+    list->arr[list->len++] = (void *) data;
+}
+
+void removeArrayList(ArrayList *list, const u32 index) {
+    if (!list->len || index >= list->len)
+        return;
+
+    for (u32 i = index; i < list->len - 1; i++) {
+        list->arr[i] = list->arr[i + 1];
     }
 
-    free(list->data);
+    list->len--;
+}
 
-    list->data = newArr;
+void constructArrayListIterator(ArrayListIterator *iter, const ArrayList *list) {
+    iter->list = (ArrayList *) list;
+    iter->index = 0;
+}
+
+void desetructArrayListIterator(ArrayListIterator *list) {
+
+}
+
+b32 hasNextArrayListIterator(const ArrayListIterator *iter) {
+    return (b32) (iter != NULL && iter->list != NULL && iter->index < iter->list->len);
+}
+
+void *nextArrayListIterator(ArrayListIterator *iter) {
+    if (iter->list != NULL && iter->index < iter->list->len) {
+        // iter->index++;
+        void *ret = iter->list->arr[iter->index];
+        iter->index++;
+
+        return ret;
+    }
+
+    return NULL;
 }

@@ -24,27 +24,44 @@
 
 #pragma once
 
-#ifndef INTERPRETER_H
-#define INTERPRETER_H
+#ifndef MAKEGEN_INTERPRETER_H
+#define MAKEGEN_INTERPRETER_H
 
-#include "maker.h"
+#include "source.h"
+#include "arraylist.h"
 
-#define INT_FLAG_CPP "-cpp"
-#define INT_FLAG_STD "-std="
-#define INT_FLAG_NAME "-name="
-#define INT_FLAG_DEBUG_MODE "-g"
-#define INT_FLAG_WALL "-Wall"
+#define INTERPRETER_INVALID_FLAG 0x80
 
-typedef struct IntFlags {
-    char **args;
-    u32 numArgs;
-    String name;
-    b32 cmode;
-    u32 stdver;
-    u32 debugMode;
-    u32 wall;
+typedef u8 flag_t;
+
+typedef enum OptimizationLevel {
+    OPT_INVALID = 0x80, OPT_DEBUG = 0, OPT_OFF = 1, OPT_LOW = 2, OPT_MED = 3, OPT_HIGH = 4
+} OptLevel;
+
+typedef struct IFlags {
+    OptLevel optLevel;
+    flag_t wall;
+    flag_t stdver;
+    flag_t cmode;
+    String outputName;
 } IFlags;
 
-b32 interpret(const char **, const u32, IFlags *, SRC *);
+void initIFlags(IFlags *);
+void freeIFlags(IFlags *);
 
-#endif // !INTERPRETER_H
+/**
+*  Interprets command line arguments into gcc style compilation
+*  that is used and passed to the internal maker to generate 
+*  the makefile desired.
+*
+*  @param argc arg count.
+*  @param argv arguments.
+*  @param sourceFiles Pointer to an ArrayList of SourceFiles(s).
+*  @param flags Pointer to IFlags struct to provided additional info to the maker.
+*
+*  @return Unsigned 32-bit int count of number of source files.  If any pointer is
+*       NULL, the function will return 0.
+*/
+u32 interpretArgs(const u32, char **, ArrayList *, IFlags *);
+
+#endif //MAKEGEN_INTERPRETER_H
