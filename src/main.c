@@ -31,7 +31,9 @@
 
 #if OS_WIN
 static void pause(void) {
-    system("PAUSE");
+    // system("PAUSE");
+    printf("Press enter to continue.\n");
+    getchar();
 }
 #else
 static void pause(void) {}
