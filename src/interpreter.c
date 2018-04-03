@@ -25,6 +25,7 @@
 #include "interpreter.h"
 
 extern void myFree(void *, const char *);
+extern void *myMalloc(const u32, const char *);
 
 static const char *flagVerCheck = "-std=c";
 static const char *flagNameCheck = "-name=";
@@ -56,6 +57,27 @@ b32 decodeIFlag(const String *arg, IFlags *flags) {
         flags->optLevel = OPT_MED;
     else if (!stringCompare(arg->cstr, "-O3"))
         flags->optLevel = OPT_HIGH;
+    else if (!stringCompare(arg->cstr, "-pipe")) {
+        String *pipe = (String *) myMalloc(sizeof(String), "Malloc -pipe flag");
+        constructString(pipe, "-pipe");
+
+        addArrayList(&flags->flags, pipe);
+    }
+
+    else if (!stringCompare(arg->cstr, "-pthread")) {
+        String *pThread = (String *) myMalloc(sizeof(String), "Malloc -pthread flag");
+        constructString(pThread, "-pthread");
+
+        addArrayList(&flags->flags, pThread);
+    }
+
+    else if (!stringCompare(arg->cstr, "-gtest")) {
+        String *gtest = (String *) myMalloc(sizeof(String), "Malloc -gtest flag");
+        constructString(gtest, "-gtest");
+
+        addArrayList(&flags->flags, gtest);
+    }
+
     // Could be "-name=<insert name here>"
     else if (arg->len >= flagNameCheckLen) {
         for (u32 i = 0; i < flagNameCheckLen; i++) {
@@ -108,6 +130,8 @@ void initIFlags(IFlags *flags) {
     flags->cmode = INTERPRETER_INVALID_FLAG;
     flags->outputName.cstr = NULL;
     flags->outputName.len = 0;
+    
+    constructArrayList(&flags->flags, 0x10, sizeof(String *));
 }
 
 void freeIFlags(IFlags *flags) {
@@ -118,6 +142,17 @@ void freeIFlags(IFlags *flags) {
 
     if (flags->outputName.cstr != NULL && flags->outputName.len)
         desrtuctString(&flags->outputName);
+
+    if (flags->flags.len) {
+        for (s64 i = flags->flags.len - 1; i >= 0; i--) {
+            String *string = (String *) getArrayList(&flags->flags, (const u32) i);
+            desrtuctString(string);
+            myFree(string, "Free flag from ArrayList");
+            removeLastArrayList(&flags->flags);
+        }
+    }
+
+    destructArrayList(&flags->flags);
 }
 
 u32 interpretArgs(const u32 argc, char **argv, ArrayList *sourceFiles, IFlags *flags) {

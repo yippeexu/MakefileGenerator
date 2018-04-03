@@ -36,7 +36,7 @@ static void writeChar(const char, const FILE *);
 static void writeActualFileName(const SourceFile *, const FILE *);
 
 static void writeMakefileHeaderVars(SRC *, const IFlags *, const FILE *);
-static b32 writeMakefileOptimizationLevel(SRC *, const OptLevel, const FILE *);
+static b32 writeMakefileOptimizationLevel(SRC *, const OptLevel, const b32, const FILE *);
 static void writeMakefileModules(const SRC *, const IFlags *, const FILE *);
 
 // static void compileFlagsToString(String *, const IFlags *);
@@ -44,7 +44,7 @@ static b32 isValidSTDVersion(const b32, const u32);
 
 void writeString(const String *word, const FILE *file) {
     for (u32 i = 0; i < word->len - 1; i++)
-        putc(word->cstr[i], (FILE *)file);
+        putc(word->cstr[i], (FILE *) file);
 }
 
 void writeCString(const char *word, const FILE *file) {
@@ -77,8 +77,28 @@ void writeMakefileHeaderVars(SRC *source, const IFlags *flags, const FILE *makef
 
     writeCString("CC_FLAGS = ", makefile);
 
-    b32 needsSpace = writeMakefileOptimizationLevel(source, flags->optLevel, makefile);
+    b32 needsSpace = False;
     
+    if (flags->flags.len) {
+        // Below is removed as it should be un-neccessary.
+#if 0
+        if (needsSpace)
+            writeChar(' ', makefile);
+
+        else
+            needsSpace = False;
+#endif
+
+        for (u32 i = 0; i < flags->flags.len; i++) {
+            String *string = getArrayList(&flags->flags, i);
+            writeString(string, makefile);
+            writeChar(' ', makefile);
+            // myFree(string, "ArrayList Flag String");
+        }
+    }
+
+    needsSpace = writeMakefileOptimizationLevel(source, flags->optLevel, needsSpace, makefile);
+
     if (flags->wall != INTERPRETER_INVALID_FLAG) {
         if (needsSpace) {
             writeCString(" -Wall", makefile);
@@ -137,7 +157,10 @@ void writeMakefileHeaderVars(SRC *source, const IFlags *flags, const FILE *makef
     }
 }
 
-b32 writeMakefileOptimizationLevel(SRC *source, const OptLevel level, const FILE *makefile) {
+b32 writeMakefileOptimizationLevel(SRC *source, const OptLevel level, const b32 needsSpace, const FILE *makefile) {
+    if (needsSpace)
+        writeChar(' ', makefile);
+    
     switch (level) {
     case OPT_DEBUG:
         writeCString("-g", makefile);

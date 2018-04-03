@@ -96,6 +96,13 @@ void removeArrayList(ArrayList *list, const u32 index) {
     list->len--;
 }
 
+void removeLastArrayList(ArrayList *list) {
+    if (!list->len)
+        return;
+
+    list->len--;
+}
+
 void constructArrayListIterator(ArrayListIterator *iter, const ArrayList *list) {
     iter->list = (ArrayList *) list;
     iter->index = 0;

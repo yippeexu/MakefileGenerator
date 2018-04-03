@@ -29,25 +29,40 @@
 #include <vld.h>
 #endif
 
-#if OS_WIN
+
 static void pause(void) {
     // system("PAUSE");
+#if OS_WIN
     printf("Press enter to continue.\n");
     getchar();
-}
-#else
-static void pause(void) {}
 #endif
+}
 
 #define TEST 0
 
 typedef ArrayListIterator Iter;
 
 static void printString(const String *);
+void *myMalloc(const u32, const char *);
 void myFree(void *, const char *);
 
 void printString(const String *string) {
     printf("[%u]: %s\n", string->len, string->cstr);
+}
+
+void *myMalloc(const u32 size, const char *tag) {
+    void *ptr = malloc(size);
+
+    if (ptr == NULL) {
+        fprintf(stderr, "Error malloc'ing ptr: %p (size: %u) with tag: %s!\n", ptr, size, tag);
+        exit(-1);
+    }
+
+#if Debug
+    printf("Malloc'ing ptr: %p (size: %u) with tag: %s\n", ptr, size, tag);
+#endif
+
+    return ptr;
 }
 
 void myFree(void *ptr, const char *tag) {

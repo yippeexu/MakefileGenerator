@@ -44,6 +44,7 @@ typedef struct IFlags {
     flag_t stdver;
     flag_t cmode;
     String outputName;
+    ArrayList flags;
 } IFlags;
 
 void initIFlags(IFlags *);

@@ -49,6 +49,7 @@ void setArrayList(ArrayList *, const u32, void *);
 
 void addArrayList(ArrayList *, const void *);
 void removeArrayList(ArrayList *, const u32);
+void removeLastArrayList(ArrayList *);
 
 void constructArrayListIterator(ArrayListIterator *, const ArrayList *);
 void desetructArrayListIterator(ArrayListIterator *);
