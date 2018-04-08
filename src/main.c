@@ -42,13 +42,16 @@ static void pause(void) {
 
 typedef ArrayListIterator Iter;
 
-static void printString(const String *);
 void *myMalloc(const u32, const char *);
 void myFree(void *, const char *);
+
+#if 0
+static void printString(const String *);
 
 void printString(const String *string) {
     printf("[%u]: %s\n", string->len, string->cstr);
 }
+#endif
 
 void *myMalloc(const u32 size, const char *tag) {
     void *ptr = malloc(size);
@@ -82,6 +85,24 @@ s32 main(s32 argc, char **argv) {
     printString(&test);
 
     desrtuctString(&test);
+
+    // Test string method.
+#elif 0
+
+    String this;
+    constructString(&this, "Hello World!");
+
+    String comp;
+    constructString(&comp, "Hello");
+
+    printString(&this);
+    printString(&comp);
+
+    const b32 result = stringStartsWith(&this, &comp);
+    printf("Result %u\n", result);
+
+    desrtuctString(&this);
+    desrtuctString(&comp);
 
 #else
     IFlags flags;

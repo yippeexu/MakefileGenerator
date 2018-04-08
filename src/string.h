@@ -44,6 +44,7 @@ u32 charToNum(const char);
 
 u32 stringLength(const char *);
 s32 stringCompare(const char *, const char *);
+b32 stringStartsWith(const String *, const String *);
 // b32 strcpy(const char *, const char *);
 b32 containsString(const String *, const String *);
 
