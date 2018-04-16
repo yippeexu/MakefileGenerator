@@ -22,47 +22,4 @@
 * SOFTWARE.
 */
 
-#pragma once
-
-#ifndef STRING_H
-#define STRING_H
-
-#include "types.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct String {
-    char *cstr;
-    u32 len;
-    // u32 capacity;
-} String;
-
-b32 isNum(const char);
-u32 charToNum(const char);
-u32 hashString(const char *);
-
-u32 stringLength(const char *);
-s32 stringCompare(const char *, const char *);
-b32 stringStartsWith(const String *, const String *);
-// b32 strcpy(const char *, const char *);
-b32 containsString(const String *, const String *);
-
-b32 parseUInt(const String *, u32 *);
-b32 toString(String *, const s32);
-
-void constructString(String *, const char *);
-void desrtuctString(String *);
-
-void copyCString(String *, const char *);
-void copyString(String *, const String *);
-void moveString(String *, String *);
-
-void appendCString(String *src, const char *);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // !STRING_H
+#include "carraylist.h"

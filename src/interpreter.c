@@ -52,6 +52,10 @@ void cleanupAllocs(ArrayList *list) {
 }
 
 b32 decodeIFlag(const String *arg, IFlags *flags) {
+    String temp;
+    temp.cstr = "-l";
+    temp.len = stringLength(temp.cstr);
+
     if (!stringCompare(arg->cstr, "-Wall"))
         flags->wall = 1;
     else if (!stringCompare(arg->cstr, "-g"))
@@ -78,11 +82,21 @@ b32 decodeIFlag(const String *arg, IFlags *flags) {
         addArrayList(&flags->flags, pThread);
     }
 
+    // Below needs to be verified as incorrect! (Temp deprecated!).
+#if 0
     else if (!stringCompare(arg->cstr, "-gtest")) {
         String *gtest = (String *) myMalloc(sizeof(String), "Malloc -gtest flag");
         constructString(gtest, "-gtest");
 
         addArrayList(&flags->flags, gtest);
+    }
+#endif
+
+    else if (stringStartsWith(arg, &temp)) {
+        String *link = (String *) myMalloc(sizeof(String), "Malloc -l flag");
+        constructString(link, arg->cstr);
+
+        addArrayList(&flags->flags, link);
     }
 
     // Could be "-name=<insert name here>"
