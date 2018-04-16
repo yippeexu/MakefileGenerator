@@ -41,6 +41,7 @@ typedef struct String {
 
 b32 isNum(const char);
 u32 charToNum(const char);
+u32 hashString(const char *);
 
 u32 stringLength(const char *);
 s32 stringCompare(const char *, const char *);
@@ -55,6 +56,7 @@ void desrtuctString(String *);
 
 void copyCString(String *, const char *);
 void copyString(String *, const String *);
+void moveString(String *, String *);
 
 void appendCString(String *src, const char *);
 

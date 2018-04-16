@@ -24,6 +24,11 @@
 
 #include "interpreter.h"
 
+#ifndef DEFAULT_C_STD
+#define DEFAULT_C_STD 99u
+#endif // !DEFAULT_C_STD
+
+
 extern void myFree(void *, const char *);
 extern void *myMalloc(const u32, const char *);
 
@@ -36,6 +41,8 @@ static u32 bufIndex = 0;
 
 static void cleanupAllocs(ArrayList *);
 static b32 decodeIFlag(const String *, IFlags *);
+
+static void loadDefaultEnvironment(ArrayList *, IFlags *);
 
 void cleanupAllocs(ArrayList *list) {
     destructArrayList(list);
@@ -123,6 +130,36 @@ b32 decodeIFlag(const String *arg, IFlags *flags) {
     return True;
 }
 
+void loadDefaultEnvironment(ArrayList *sourceFiles, IFlags *flags) {
+    /*
+    *   -pipe -pthread -gtest -g -Wall -std=c11 -name=makegen main.c arraylist.c 
+    *   interpreter.c maker.c source.c string.c types.c
+    */
+
+    SourceFile *mainFile = &fileBuf[bufIndex++];
+    SourceFile *exFile = &fileBuf[bufIndex++];
+
+    constructString(&mainFile->fileName, "main.c");
+    constructString(&exFile->fileName, "ex.c");
+
+    mainFile->fileType = SOURCE;
+    exFile->fileType = SOURCE;
+
+    addArrayList(sourceFiles, mainFile);
+    addArrayList(sourceFiles, exFile);
+
+    flags->optLevel = OPT_DEBUG;
+    flags->wall = 1;
+    flags->stdver = DEFAULT_C_STD;
+    flags->cmode = True;
+    constructString(&flags->outputName, "main");
+
+    String *pipe = (String *) myMalloc(sizeof(String), "Malloc -pipe flag");
+    constructString(pipe, "-pipe");
+
+    addArrayList(&flags->flags, pipe);
+}
+
 void initIFlags(IFlags *flags) {
     flags->optLevel = OPT_INVALID;
     flags->wall = INTERPRETER_INVALID_FLAG;
@@ -169,6 +206,11 @@ u32 interpretArgs(const u32 argc, char **argv, ArrayList *sourceFiles, IFlags *f
     }*/
 
     constructArrayList(sourceFiles, 0x10, sizeof(SourceFile));
+
+    if (!stringCompare(argv[1], "--example")) {
+        loadDefaultEnvironment(sourceFiles, flags);
+        return sourceFiles->len;
+    }
 
     for (u32 i = 1; i < argc; i++) {
         String arg;

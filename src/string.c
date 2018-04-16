@@ -24,7 +24,7 @@
 
 #include "string.h"
 
-void myFree(void *, const char *);
+extern void myFree(void *, const char *);
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +36,25 @@ b32 isNum(const char c) {
 
 u32 charToNum(const char c) {
     return (b32) (c - '0');
+}
+
+// static const u32 p = 16777619u;
+#define P_CONST 16777619u
+u32 hashString(const char *str) {
+    u32 hash = 2166136261u;
+
+    while (*str != NULL) {
+        hash = (hash ^ *str) * P_CONST;
+        str++;
+    }
+
+    hash += hash << 13;
+    hash ^= hash >> 7;
+    hash += hash << 3;
+    hash ^= hash >> 17;
+    hash += hash << 5;
+
+    return hash;
 }
 
 u32 stringLength(const char *cstr) {
@@ -182,6 +201,13 @@ void copyString(String *string, const String *src) {
         string->cstr = src->cstr;
         string->len = src->len;
     }
+}
+
+void moveString(String *dest, String *src) {
+    dest->cstr = src->cstr;
+    src->cstr = NULL;
+    dest->len = src->len;
+    src->len = 0;
 }
 
 void appendCString(String *string, const char *cstr) {
