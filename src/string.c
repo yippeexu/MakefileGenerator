@@ -43,7 +43,7 @@ u32 charToNum(const char c) {
 u32 hashString(const char *str) {
     u32 hash = 2166136261u;
 
-    while (*str != NULL) {
+    while (*str != '\0') {
         hash = (hash ^ *str) * P_CONST;
         str++;
     }
