@@ -86,6 +86,10 @@ extern "C" {
 
 u32 my_pow(const u32, const u32);
 
+void *myMalloc(const u32, const char *);
+
+void myFree(void *, const char *);
+
 #ifdef __cplusplus
 }
 #endif

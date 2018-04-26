@@ -42,9 +42,6 @@ static void pause(void) {
 
 typedef ArrayListIterator Iter;
 
-void *myMalloc(const u32, const char *);
-void myFree(void *, const char *);
-
 #if 0
 static void printString(const String *);
 
@@ -52,28 +49,6 @@ void printString(const String *string) {
     printf("[%u]: %s\n", string->len, string->cstr);
 }
 #endif
-
-void *myMalloc(const u32 size, const char *tag) {
-    void *ptr = malloc(size);
-
-    if (ptr == NULL) {
-        fprintf(stderr, "Error malloc'ing ptr: %p (size: %u) with tag: %s!\n", ptr, size, tag);
-        exit(-1);
-    }
-
-#if Debug
-    printf("Malloc'ing ptr: %p (size: %u) with tag: %s\n", ptr, size, tag);
-#endif
-
-    return ptr;
-}
-
-void myFree(void *ptr, const char *tag) {
-#if Debug
-    printf("Freeing ptr: %p with tag: %s\n", ptr, tag);
-#endif
-    free(ptr);
-}
 
 s32 main(s32 argc, char **argv) {
 #if TEST

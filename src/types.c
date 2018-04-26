@@ -24,6 +24,8 @@
 
 #include "types.h"
 
+#include <assert.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -41,6 +43,33 @@ u32 my_pow(const u32 base, const u32 power) {
     }
 
     return result;
+}
+
+void *myMalloc(const u32 size, const char *tag) {
+    assert(size > 0);
+
+    void *ptr = malloc(size);
+
+    if (ptr == NULL) {
+        fprintf(stderr, "Error malloc'ing ptr: %p (size: %u) with tag: %s!\n", ptr, size, tag);
+        exit(-1);
+    }
+
+#if Debug
+    assert(tag != NULL);
+    printf("Malloc'ing ptr: %p (size: %u) with tag: %s\n", ptr, size, tag);
+#endif
+
+    return ptr;
+}
+
+void myFree(void *ptr, const char *tag) {
+    assert(ptr != NULL);
+
+#if Debug
+    printf("Freeing ptr: %p with tag: %s\n", ptr, tag);
+#endif
+    free(ptr);
 }
 
 #ifdef __cplusplus
