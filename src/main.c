@@ -24,6 +24,7 @@
 
 #include "interpreter.h"
 #include "maker.h"
+#include "filesystem.h"
 
 #ifdef WIN32
 #include <vld.h>
@@ -65,6 +66,25 @@ s32 main(s32 argc, char **argv) {
         // printf("[%d]: %s\n", i, argv[i]);
 
     // Test string method.
+
+    File file;
+
+    constructString(&file.path, "src/main.c");
+
+    file.op = OP_READ;
+    file.isDir = False;
+    file.file = NULL;
+
+    openFile(&file);
+
+    u32 buf;
+    while ((buf = readByteFromFile(&file) != EOF)) {
+        printf("%u\n", buf);
+    }
+
+    closeFile(&file);
+
+    desrtuctString(&file.path);
 #elif 0
 
     String this;

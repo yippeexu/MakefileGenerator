@@ -89,12 +89,12 @@ s32 stringCompare(const char *left, const char *right) {
     return right[i] == '\0' ? 0 : 1;
 }
 
-b32 stringStartsWith(const String *this, const String *ref) {
-    if ((this == NULL || ref == NULL || this->len < ref->len) && ref->len > 1)
+b32 stringStartsWith(const String *string, const String *ref) {
+    if ((string == NULL || ref == NULL || string->len < ref->len) && ref->len > 1)
         return False;
 
     for (u32 i = 0; i < ref->len - 1; i++) {
-        if (this->cstr[i] != ref->cstr[i])
+        if (string->cstr[i] != ref->cstr[i])
             return False;
     }
 
