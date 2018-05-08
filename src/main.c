@@ -30,7 +30,6 @@
 #include <vld.h>
 #endif
 
-
 static void pause(void) {
     // system("PAUSE");
 #if OS_WIN
@@ -53,15 +52,6 @@ void printString(const String *string) {
 
 s32 main(s32 argc, char **argv) {
 #if TEST
-    String test;
-    constructString(&test, "Hello");
-    printString(&test);
-
-    appendCString(&test, " World!");
-    printString(&test);
-
-    desrtuctString(&test);
-
     // for (s32 i = 1; i < argc; i++)
         // printf("[%d]: %s\n", i, argv[i]);
 
@@ -69,22 +59,34 @@ s32 main(s32 argc, char **argv) {
 
     File file;
 
-    constructString(&file.path, "src/main.c");
+    constructString(&file.path, "../MakefileGenerator/src/main.c");
 
     file.op = OP_READ;
     file.isDir = False;
     file.file = NULL;
 
-    openFile(&file);
+    // printf("Exists: %u\n", checkIfFileExists("../MakefileGenerator/src/main.c"));
+
+    if (openFile(&file)) {
+        goto END;
+    }
 
     u32 buf;
-    while ((buf = readByteFromFile(&file) != EOF)) {
-        printf("%u\n", buf);
+    u32 count = 0;
+    while ((buf = readByteFromFile(&file)) != EOF) {
+        printf("%c", (char) buf & 0xFF);
+
+        if (++count == 50) {
+            count = 0;
+            putchar('\n');
+        }
     }
 
     closeFile(&file);
 
     desrtuctString(&file.path);
+
+    END:;
 #elif 0
 
     String this;

@@ -23,6 +23,8 @@ typedef struct File {
     FILE *file;
 } File;
 
+char *getCurrentWorkingDir(void);
+
 b32 checkIfFileExists(const char *);
 
 u32 openFile(File *);

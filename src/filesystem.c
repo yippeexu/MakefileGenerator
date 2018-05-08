@@ -6,6 +6,7 @@
 #include "filesystem.h"
 
 #include <sys/stat.h>
+#include <unistd.h>
 
 static char *toFileMode(const EFileOp op) {
     switch (op) {
@@ -22,6 +23,15 @@ static char *toFileMode(const EFileOp op) {
 #endif
             return NULL;
     }
+}
+
+static char workingDirBuf[1024];
+
+char *getCurrentWorkingDir(void) {
+    if (getcwd(workingDirBuf, sizeof(workingDirBuf)) != NULL)
+        return workingDirBuf;
+
+    return NULL;
 }
 
 b32 checkIfFileExists(const char *path) {
@@ -62,56 +72,56 @@ void closeFile(File *file) {
 }
 
 u32 readByteFromFile(const File *file) {
-    return (u32) fgetc(file->file);
+    return (u32) getc(file->file);
 }
 
 u32 readIntFromFile(const File *file, const b32 bigEndian) {
     u32 output;
 
     if (bigEndian) {
-        output = (u32) fgetc(file->file);
+        output = (u32) getc(file->file);
         output <<= 8;
-        output |= fgetc(file->file);
+        output |= getc(file->file);
         output <<= 8;
-        output |= fgetc(file->file);
+        output |= getc(file->file);
         output <<= 8;
-        output |= fgetc(file->file);
+        output |= getc(file->file);
     }
 
     else {
-        output = (u32) fgetc(file->file);
-        output |= fgetc(file->file) << 0x8;
-        output |= fgetc(file->file) << 0x10;
-        output |= fgetc(file->file) << 0x18;
+        output = (u32) getc(file->file);
+        output |= getc(file->file) << 0x8;
+        output |= getc(file->file) << 0x10;
+        output |= getc(file->file) << 0x18;
     }
 
     return output;
 }
 
 void writeByteToFile(const u32 data, const File *file) {
-    fputc(data, file->file);
+    putc(data, file->file);
 }
 
 void writeIntToFile(const u32 data, const File *file, const b32 bigEndian) {
     if (bigEndian) {
-        fputc(data >> 0x18, file->file);
-        fputc((data >> 0x10) & 0xFF, file->file);
-        fputc((data >> 0x8) & 0xFF, file->file);
-        fputc(data & 0xFF, file->file);
+        putc(data >> 0x18, file->file);
+        putc((data >> 0x10) & 0xFF, file->file);
+        putc((data >> 0x8) & 0xFF, file->file);
+        putc(data & 0xFF, file->file);
     }
 
     else {
         u32 copy = data;
 
-        fputc(copy & 0xFF, file->file);
+        putc(copy & 0xFF, file->file);
         copy >>= 8;
 
-        fputc(copy & 0xFF, file->file);
+        putc(copy & 0xFF, file->file);
         copy >>= 8;
 
-        fputc(copy & 0xFF, file->file);
+        putc(copy & 0xFF, file->file);
         copy >>= 8;
 
-        fputc(copy & 0xFF, file->file);
+        putc(copy & 0xFF, file->file);
     }
 }
