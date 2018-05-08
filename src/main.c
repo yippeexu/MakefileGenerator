@@ -61,6 +61,9 @@ s32 main(s32 argc, char **argv) {
 
     desrtuctString(&test);
 
+    // for (s32 i = 1; i < argc; i++)
+        // printf("[%d]: %s\n", i, argv[i]);
+
     // Test string method.
 #elif 0
 
