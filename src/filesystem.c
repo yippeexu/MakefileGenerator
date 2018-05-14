@@ -6,7 +6,15 @@
 #include "filesystem.h"
 
 #include <sys/stat.h>
+
+#if OS_WIN
+#include <direct.h>
+inline static char *getcwd(char *buf, s32 len) {
+    return _getcwd(buf, len);
+}
+#else
 #include <unistd.h>
+#endif
 
 static char *toFileMode(const EFileOp op) {
     switch (op) {
