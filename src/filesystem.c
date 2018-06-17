@@ -4,6 +4,7 @@
  */
 
 #include "filesystem.h"
+#include "dirent.h"
 
 #include <sys/stat.h>
 
@@ -18,11 +19,11 @@ inline static char *getcwd(char *buf, s32 len) {
 
 static char *toFileMode(const EFileOp op) {
     switch (op) {
-        case OP_READ:
+        case EFILE_OP_READ:
             return "r";
-        case OP_WRITE:
+        case EFILE_OP_WRITE:
             return "w";
-        case OP_OVERWRITE:
+        case EFILE_OP_OVERWRITE:
             return "w+";
         default:
 #if Debug
@@ -56,7 +57,8 @@ u32 openFile(File *file) {
     file->file = fopen(file->path.cstr, mode);
 
     if (file->file == NULL) {
-        perror("Error openning file!\n");
+        // perror("Error openning file!\n");
+		fprintf(stderr, "Error openning file: '%s'!\n", file->path.cstr);
         return 1;
     }
 
@@ -132,4 +134,59 @@ void writeIntToFile(const u32 data, const File *file, const b32 bigEndian) {
 
         putc(copy & 0xFF, file->file);
     }
+}
+
+b32 openDir(Dir *dir) {
+	if (dir == NULL || dir->op == EDIR_OP_VALID)
+		return False;
+
+	dir->dir = opendir(dir->path.cstr);
+
+	if (dir->dir == NULL) {
+		fprintf(stderr, "Error openning directory: '%s'!\n", dir->path.cstr);
+		return False;
+	}
+
+	return True;
+}
+
+void closeDir(Dir *dir) {
+	if (dir != NULL && dir->dir != NULL && dir->op == EDIR_OP_VALID) {
+		closedir(dir->dir);
+		dir->dir = NULL;
+		dir->op = EDIR_OP_INVALID;
+	}
+}
+
+u32 getFilesAndSubdirectories(const Dir *dir, const ArrayList *list) {
+	if (dir == NULL || dir->dir == NULL || dir->op != EDIR_OP_VALID || list == NULL) {
+		// fprintf(stderr, "Error reading files and subdirectories!\n");
+		perror("Error reading files and subdirectories!\n");
+		return 1;
+	}
+
+	struct dirent *entry;
+
+	while ((entry = readdir(dir->dir)) != NULL) {
+		String *currentFile = (String *) myMalloc(sizeof(String), "Construct file/dir name");
+		constructString(currentFile, entry->d_name);
+
+		addArrayList((ArrayList *) list, currentFile);
+	}
+
+	return 0;
+}
+
+void cleanupDirectoryListing(const ArrayList *list) {
+	if (list == NULL || !list->len)
+		return;
+
+	ArrayListIterator iter;
+	constructArrayListIterator(&iter, list);
+
+	while (hasNextArrayListIterator(&iter)) {
+		String *file = (String *) nextArrayListIterator(&iter);
+		desrtuctString(file);
+		myFree(file, "Free file!");
+	}
 }
