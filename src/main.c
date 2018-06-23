@@ -25,6 +25,7 @@
 #include "interpreter.h"
 #include "maker.h"
 #include "filesystem.h"
+#include "filter.h"
 
 #ifdef WIN32
 #include <vld.h>
@@ -50,8 +51,39 @@ void printString(const String *string) {
 }
 #endif
 
+static s32 intCompare(void *left, void *right) {
+	s32 leftInt = *(s32 *) &left;
+	s32 rightInt = *(s32 *) &right;
+
+	return leftInt - rightInt;
+}
+
 s32 main(s32 argc, char **argv) {
-#if TEST
+#if 1
+
+	FilterList filter;
+	filter.whiteListMode = True;
+	
+	constructArrayList(&filter.descriptor, 0x10, sizeof(u32));
+
+	for (u32 i = 0; i <= 10; i += 2) {
+		addArrayList(&filter.descriptor, (const void *) i);
+	}
+
+	u32 input[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+	const u32 len = sizeof(input) / sizeof(input[0]);
+	u32 output[sizeof(input) / sizeof(input[0])] = { 0 };
+
+	const u32 numElementsFound = filterArray((void **) input, (void **) output, (const pint) len, (const u32) sizeof(input[0]), &filter, intCompare);
+
+	puts("Output:\n");
+	for (u32 i = 0; i < numElementsFound; i++) {
+		printf("[%u]: %u\n", i, output[i]);
+	}
+
+	destructArrayList(&filter.descriptor);
+
+#elif TEST
     // for (s32 i = 1; i < argc; i++)
         // printf("[%d]: %s\n", i, argv[i]);
 

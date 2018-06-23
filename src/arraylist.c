@@ -78,6 +78,15 @@ void setArrayList(ArrayList *list, const u32 index, void *data) {
     }
 }
 
+b32 containsArrayList(const ArrayList *list, void *obj, CompareFunc comparer) {
+	for (u32 i = 0; i < list->len; i++) {
+		if (comparer(list->arr[i], obj) == 0)
+			return True;
+	}
+
+	return False;
+}
+
 void addArrayList(ArrayList *list, const void *data) {
     if (list->len + 1 >= list->capacity)
         resizeArray(list);

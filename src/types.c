@@ -72,6 +72,15 @@ void myFree(void *ptr, const char *tag) {
     free(ptr);
 }
 
+void copyBytes(char *src, char *dest, const u32 srcOffset, const u32 destOffset, const u32 numBytes) {
+	const u32 srcOffsetPos = srcOffset * numBytes;
+	const u32 destOffsetPos = destOffset * numBytes;
+
+	for (u32 i = 0; i < numBytes; i++) {
+		dest[i + destOffsetPos] = src[i + srcOffsetPos];
+	}
+}
+
 #ifdef __cplusplus
 }
 #endif

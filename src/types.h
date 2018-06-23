@@ -57,6 +57,10 @@
 #define global_status static
 #endif
 
+#ifndef internal
+#define internal static
+#endif
+
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
@@ -68,9 +72,12 @@ typedef int32_t s32;
 typedef int64_t s64;
 
 typedef u32 b32;
+typedef size_t pint;
 
 typedef float f32;
 typedef double f64;
+
+typedef s32(*CompareFunc)(void *, void *);
 
 #ifndef False
 #define False (b32) 0u
@@ -87,8 +94,9 @@ extern "C" {
 u32 my_pow(const u32, const u32);
 
 void *myMalloc(const u32, const char *);
-
 void myFree(void *, const char *);
+
+void copyBytes(char *, char *, const u32, const u32, const u32);
 
 #ifdef __cplusplus
 }

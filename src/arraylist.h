@@ -41,11 +41,14 @@ typedef struct ArrayListIterator {
     u32 index;
 } ArrayListIterator;
 
+
+
 void constructArrayList(ArrayList *, const u32, const u32);
 void destructArrayList(ArrayList *);
 
 void *getArrayList(const ArrayList *, const u32);
 void setArrayList(ArrayList *, const u32, void *);
+b32 containsArrayList(const ArrayList *, void *obj, CompareFunc);
 
 void addArrayList(ArrayList *, const void *);
 void removeArrayList(ArrayList *, const u32);
