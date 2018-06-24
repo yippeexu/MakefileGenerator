@@ -50,6 +50,7 @@ b32 stringStartsWith(const String *, const String *);
 b32 containsString(const String *, const String *);
 
 b32 parseUInt(const String *, u32 *);
+b32 parseInt(const String *, s32 *);
 b32 toString(String *, const s32);
 
 void constructString(String *, const char *);

@@ -91,7 +91,7 @@ typedef s32(*CompareFunc)(void *, void *);
 extern "C" {
 #endif
 
-u32 my_pow(const u32, const u32);
+u32 myPow(const u32, const u32);
 
 void *myMalloc(const u32, const char *);
 void myFree(void *, const char *);

@@ -67,9 +67,43 @@ void destructArrayList(ArrayList *list) {
 #endif
 }
 
+void copyArrayList(const ArrayList *src, ArrayList *dest) {
+	constructArrayList(dest, src->capacity, src->sizeOf);
+
+	copyBytes((char *) src->arr, (char *) dest->arr, 0, 0, src->capacity * src->sizeOf);
+}
+
+void moveArrayList(ArrayList *src, ArrayList *dest) {
+	dest->arr = src->arr;
+	dest->capacity = src->capacity;
+	dest->sizeOf = src->sizeOf;
+	dest->len = 0;
+
+#if Debug
+	src->arr = NULL;
+	src->capacity = 0;
+	src->sizeOf = 0;
+	src->len = 0;
+#endif
+}
+
 void *getArrayList(const ArrayList *list, const u32 index) {
     // return index < list->len ? *(list->arr + (index * list->sizeOf)) : NULL;
     return index < list->len ? list->arr[index] : NULL;
+}
+
+void *findInArrayList(const ArrayList *list, void *objToFind, CompareFunc comparer) {
+	if (list == NULL || !list->len)
+		return NULL;
+
+	for (u32 i = 0; i < list->len; i++) {
+		void *currentObj = list->arr[i];
+
+		if (comparer(currentObj, objToFind) == 0)
+			return currentObj;
+	}
+
+	return NULL;
 }
 
 void setArrayList(ArrayList *list, const u32 index, void *data) {
@@ -78,9 +112,12 @@ void setArrayList(ArrayList *list, const u32 index, void *data) {
     }
 }
 
-b32 containsArrayList(const ArrayList *list, void *obj, CompareFunc comparer) {
+b32 containsArrayList(const ArrayList *list, void *objToFind, CompareFunc comparer) {
+	if (list == NULL || !list->len)
+		return False;
+
 	for (u32 i = 0; i < list->len; i++) {
-		if (comparer(list->arr[i], obj) == 0)
+		if (comparer(list->arr[i], objToFind) == 0)
 			return True;
 	}
 
@@ -135,4 +172,19 @@ void *nextArrayListIterator(ArrayListIterator *iter) {
     }
 
     return NULL;
+}
+
+b32 hasPreviousArrayListIterator(const ArrayListIterator *iter) {
+	return (b32) (iter != NULL && iter->list != NULL && iter->index > 0);
+}
+
+void *previousArrayListIterator(ArrayListIterator *iter) {
+	if (iter->list != NULL && iter->index > 0) {
+		void *ret = iter->list->arr[iter->index];
+		iter->index--;
+
+		return ret;
+	}
+
+	return NULL;
 }

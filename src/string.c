@@ -123,18 +123,47 @@ b32 parseUInt(const String *string, u32 *output) {
     if (string == NULL || string->cstr == NULL || !string->len || output == NULL)
         return False;
 
-    *output = 0;
+	u32 buffer = 0;
 
     u32 power = 1;
     for (s32 i = string->len - 2; i >= 0; i--) {
         if (!isNum(string->cstr[i]))
             return False;
 
-        *output += charToNum(string->cstr[i]) * power;
+        buffer += charToNum(string->cstr[i]) * power;
         power *= 10;
     }
 
+	*output = buffer;
+
     return True;
+}
+
+b32 parseInt(const String *string, s32 *output) {
+	if (string == NULL || string->cstr == NULL || !string->len || output == NULL)
+		return False;
+
+	s32 buffer = 0;
+	u32 power = 1;
+
+	for (s32 i = string->len - 2; i >= 1; i--) {
+		if (!isNum(string->cstr[i]))
+			return False;
+
+		buffer += charToNum(string->cstr[i]) * power;
+		power *= 10;
+	}
+
+	if (string->cstr[0] == '-')
+		buffer = -buffer;
+	else if (isNum(string->cstr[0]))
+		buffer += charToNum(string->cstr[0] * power);
+	else if (string->cstr[0] != '+')
+		return False;
+
+	*output = buffer;
+
+	return True;
 }
 
 b32 toString(String *string, const s32 val) {

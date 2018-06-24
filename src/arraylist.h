@@ -41,14 +41,15 @@ typedef struct ArrayListIterator {
     u32 index;
 } ArrayListIterator;
 
-
-
 void constructArrayList(ArrayList *, const u32, const u32);
 void destructArrayList(ArrayList *);
+void copyArrayList(const ArrayList *, ArrayList *);
+void moveArrayList(ArrayList *, ArrayList *);
 
 void *getArrayList(const ArrayList *, const u32);
+void *findInArrayList(const ArrayList *, void *, CompareFunc);
 void setArrayList(ArrayList *, const u32, void *);
-b32 containsArrayList(const ArrayList *, void *obj, CompareFunc);
+b32 containsArrayList(const ArrayList *, void *, CompareFunc);
 
 void addArrayList(ArrayList *, const void *);
 void removeArrayList(ArrayList *, const u32);
@@ -56,7 +57,11 @@ void removeLastArrayList(ArrayList *);
 
 void constructArrayListIterator(ArrayListIterator *, const ArrayList *);
 void desetructArrayListIterator(ArrayListIterator *);
+
 b32 hasNextArrayListIterator(const ArrayListIterator *);
 void *nextArrayListIterator(ArrayListIterator *);
+
+b32 hasPreviousArrayListIterator(const ArrayListIterator *);
+void *previousArrayListIterator(ArrayListIterator *);
 
 #endif //MAKEGEN_ARRAYLIST_H

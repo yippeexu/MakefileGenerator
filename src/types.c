@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-u32 my_pow(const u32 base, const u32 power) {
+u32 myPow(const u32 base, const u32 power) {
     if (!power)
         return 1;
     else if (power == 1)
